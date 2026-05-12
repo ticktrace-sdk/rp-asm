@@ -69,6 +69,7 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 
 | Doc                  | What it covers                                         |
 | -------------------- | ------------------------------------------------------ |
+| `docs/apps.md`       | Build a Pico 2 app from scratch — function anatomy (prologue/body/epilogue), multi-file projects, IRQ handlers, Makefile wiring, debugging recipes |
 | `docs/calling.md`    | AAPCS conventions, how drivers call each other, stack discipline, tail-calling, IRQ handler ABI, cycle costs |
 | `docs/clocks.md`     | XOSC/PLL bring-up, clock tree, baud-recomputation hook |
 | `docs/gpio.md`       | 48-pin GPIO + PADS, IRQ programming, ISO/OD erratum    |
@@ -84,8 +85,9 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 | `docs/trng.md`       | TRNG bring-up + EHR drain                              |
 | `docs/pio.md`        | PIO controller API + hand-encoding instructions        |
 
-**New here?** Read `docs/calling.md` first. Everything else assumes you
-know the calling conventions.
+**New here?** Read `docs/apps.md` first — it walks you through writing
+your first app top-to-bottom. Then `docs/calling.md` for the formal
+calling-convention rules everything else assumes.
 
 ## Design notes
 
