@@ -1,0 +1,40 @@
+:name: rp-asm v0.1 blinky
+:description: Loads build/blinky.elf onto the simulated RP2350, runs for
+:             1 simulated second, and dumps UART0 + GPIO toggle counts.
+
+# ------------------------------------------------------------------- Setup
+$bin?=@build/blinky.elf
+
+mach create "rp2350"
+machine LoadPlatformDescription @tests/renode/rp2350.repl
+
+# Hook UART0 onto the test analyzer so its output ends up in the log AND
+# is captured by `uart0 GetLine` in the test runner.
+showAnalyzer uart0
+
+# ------------------------------------------------------------------- Image
+# Load ELF.  Renode handles section placement (we have a flat SRAM at
+# 0x20000000 in the .repl, matching the linker script).
+sysbus LoadELF $bin
+
+# Bootrom would have set SP/PC from the vector table at 0x20000000.  Renode
+# normally honours an ELF entry point but our entry symbol uses the Thumb
+# bit, so explicitly point VTOR + initial registers at SRAM_BASE.
+cpu0 VectorTableOffset 0x20000000
+
+# ----------------------------------------------------------- Bus monitor
+# Tally GPIO25 toggles by hooking the SIO_GPIO_OUT_XOR address.  Renode's
+# WriteHook gets (cpu, address, width, value) - we log at INFO level so
+# the run.sh tally regex (`grep -c LED_TOGGLE`) works against the captured
+# console.
+sysbus AddWatchpointHook 0xd0000028 4 Write "cpu.InfoLog('LED_TOGGLE @ 0x{0:X} = 0x{1:X}'.format(address, value))"
+
+# ----------------------------------------------------------- Run + dump
+emulation RunFor "00:00:01"
+
+# Dump UART output.  TestUartHas can be replaced with a regex check by
+# the runner; we just print the full buffer here.
+echo "----- UART0 dump -----"
+uart0 DumpHistoryBuffer
+
+echo "----- Done -----"

@@ -1,0 +1,75 @@
+name: test
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  schedule:
+    # Nightly T3 run at 03:17 UTC.  T1+T2 already run on every push, so the
+    # cron trigger only matters for the slow tier.
+    - cron: '17 3 * * *'
+
+jobs:
+  # T1 + T2: fast tier, runs on every push and PR.
+  fast:
+    name: T1 + T2 (Unicorn + QEMU)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            binutils-arm-none-eabi \
+            qemu-system-arm \
+            python3-pip
+
+      - name: Install Python deps
+        run: |
+          python3 -m pip install --break-system-packages \
+            unicorn pyelftools pytest
+
+      - name: Build firmware
+        run: make
+
+      - name: Run T1 + T2
+        run: make test
+
+      - name: Upload build artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build/
+          if-no-files-found: ignore
+
+  # T3: slow tier, runs nightly + on demand.  We do NOT block PRs on this.
+  slow:
+    name: T3 (Renode)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            binutils-arm-none-eabi \
+            python3-pip
+
+      - name: Install Renode
+        run: |
+          ver=1.16.1
+          curl -sSL -o /tmp/renode.deb \
+            https://github.com/renode/renode/releases/download/v${ver}/renode_${ver}_amd64.deb
+          sudo apt-get install -y /tmp/renode.deb
+          renode --version
+
+      - name: Build firmware
+        run: make
+
+      - name: Run T3
+        run: make test-t3

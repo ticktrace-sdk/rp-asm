@@ -1,0 +1,180 @@
+// =============================================================================
+// rp2350.repl - minimal Renode platform description for the RP2350 (M33).
+//
+// This is *not* a full-fidelity model.  Renode upstream ships nothing for
+// the RP2350 family; we approximate enough of the bus + UART to validate
+// the v0.1 image (boot from SRAM, init UART, print banner, blink LED).
+//
+// Notable simplifications vs. real silicon:
+//   - Single Cortex-M33 core; the RP2350 has two M33 + two Hazard3 RISC-V.
+//   - No bootrom; we set VTOR explicitly in the .resc and let the firmware
+//     bring up the rest.
+//   - Atomic register aliases (+0x1000 XOR / +0x2000 SET / +0x3000 CLR) are
+//     covered by sizing each peripheral region at 0x4000 and decoding the
+//     alias offset inside the Python peripheral.  Reads of RESET_DONE
+//     always return ~RESET so the spin loop in startup.S exits.
+//   - PIO0/PIO1/PIO2, DMA, USB, ADC, watchdog, timers (TIMER0/TIMER1) are
+//     not modelled; their address windows are present as PythonPeripheral
+//     stubs so stray accesses log instead of bus-faulting.
+//   - SIO is a flat MappedMemory region; we observe writes via the bus
+//     monitor in the .resc rather than modelling the GPIO state machine.
+// =============================================================================
+
+cpu0: CPU.CortexM @ sysbus
+    cpuType: "cortex-m33"
+    nvic: nvic0
+
+nvic0: IRQControllers.NVIC @ sysbus 0xe000e000
+    -> cpu0@0
+    systickFrequency: 12000000
+
+// ----- Memory --------------------------------------------------------------
+// 8 x 64K SRAM banks (512K contiguous) + 4 KiB scratch X/Y at 0x20080000.
+sram: Memory.MappedMemory @ sysbus 0x20000000
+    size: 0x80000
+
+scratch_x: Memory.MappedMemory @ sysbus 0x20080000
+    size: 0x1000
+
+scratch_y: Memory.MappedMemory @ sysbus 0x20081000
+    size: 0x1000
+
+// XIP window (16 MiB) for future flash boot - empty backing for now.
+xip: Memory.MappedMemory @ sysbus 0x10000000
+    size: 0x1000000
+
+// Boot ROM region (32 KiB) - empty.
+bootrom: Memory.MappedMemory @ sysbus 0x00000000
+    size: 0x8000
+
+// ----- RESETS (with auto-clearing RESET_DONE mirror) -----------------------
+// 0x4000 wide so it covers the four atomic alias windows (RW/XOR/SET/CLR).
+resets: Python.PythonPeripheral @ sysbus 0x40020000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    state = {'reset': 0xFFFFFFFF}
+elif request.IsRead:
+    off = request.Offset & 0xFFF
+    if off == 0x00:
+        request.Value = state['reset']
+    elif off == 0x08:
+        # RESET_DONE = ~RESET
+        request.Value = (~state['reset']) & 0xFFFFFFFF
+    else:
+        request.Value = 0
+elif request.IsWrite:
+    off = request.Offset
+    val = request.Value & 0xFFFFFFFF
+    base = off & 0xFFF
+    alias = off & 0x3000
+    if base == 0x00:
+        if alias == 0x0000:
+            state['reset'] = val
+        elif alias == 0x1000:
+            state['reset'] = (state['reset'] ^ val) & 0xFFFFFFFF
+        elif alias == 0x2000:
+            state['reset'] = (state['reset'] | val) & 0xFFFFFFFF
+        elif alias == 0x3000:
+            state['reset'] = state['reset'] & ((~val) & 0xFFFFFFFF)
+'''
+
+// ----- IO_BANK0 ------------------------------------------------------------
+// 30 GPIO * 8B = 0xF0; spans + atomic aliases up to 0x4000.  Stub: drop
+// writes silently, return 0 on read.
+io_bank0: Python.PythonPeripheral @ sysbus 0x40028000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''
+
+// ----- PADS_BANK0 ----------------------------------------------------------
+pads_bank0: Python.PythonPeripheral @ sysbus 0x40038000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''
+
+// ----- UART0 (PL011) -------------------------------------------------------
+uart0: UART.PL011 @ sysbus 0x40070000
+    -> nvic0@33
+
+uart1: UART.PL011 @ sysbus 0x40078000
+    -> nvic0@34
+
+// ----- TIMER0 / TIMER1 (stub) ---------------------------------------------
+// Renode doesn't ship an RP2350-compatible timer.  We expose a freerunning
+// 32-bit counter at TIMERAWL so the firmware can poll if needed.  Used in
+// M2+ when we add tick-based delay routines.
+timer0: Python.PythonPeripheral @ sysbus 0x400b0000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    counter = [0]
+elif request.IsRead:
+    off = request.Offset & 0xFFF
+    if off == 0x28:
+        counter[0] = (counter[0] + 1) & 0xFFFFFFFF
+        request.Value = counter[0]
+    else:
+        request.Value = 0
+'''
+
+timer1: Python.PythonPeripheral @ sysbus 0x400b8000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''
+
+// ----- PIO0 / PIO1 / PIO2 (stub) -------------------------------------------
+pio0: Python.PythonPeripheral @ sysbus 0x50200000
+    size: 0x1000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''
+
+pio1: Python.PythonPeripheral @ sysbus 0x50300000
+    size: 0x1000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''
+
+pio2: Python.PythonPeripheral @ sysbus 0x50400000
+    size: 0x1000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''
+
+// ----- SIO (M33-local single-cycle IO) -------------------------------------
+// On real silicon SIO is per-core and not bus-visible from other masters.
+// Renode's CortexM happily routes 0xD0000000 through sysbus, so we put a
+// 64K MappedMemory there: writes land, the .resc bus monitor watches the
+// XOR alias for LED toggles.
+sio: Memory.MappedMemory @ sysbus 0xd0000000
+    size: 0x10000
