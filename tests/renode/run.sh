@@ -46,6 +46,10 @@ if [ ! -f "$repo/build/pwm_fade_demo.elf" ]; then
     echo "INFO: build/pwm_fade_demo.elf missing - building..."
     make -C "$repo" build/pwm_fade_demo.uf2 >/dev/null
 fi
+if [ ! -f "$repo/build/dma_memcpy_demo.elf" ]; then
+    echo "INFO: build/dma_memcpy_demo.elf missing - building..."
+    make -C "$repo" build/dma_memcpy_demo.uf2 >/dev/null
+fi
 
 cd "$repo"
 
@@ -157,6 +161,27 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
     rm -f "$log"
 fi
 # ===== END PWM =====
+
+# ===== DMA (M3-C) =====
+# ---- 5. dma.resc - M3-C DMA memcpy demo (skip if elf missing) -------------
+if [ -f "$repo/build/dma_memcpy_demo.elf" ]; then
+    log="$(run_one "tests/renode/dma.resc")" || { overall=1; }
+    if [ -n "${log:-}" ] && [ -f "$log" ]; then
+        echo "----- dma.resc log (last 30 lines) -----"
+        tail -30 "$log"
+        echo "-----------------------------------------"
+        if ! grep -q "DMA OK" "$log"; then
+            echo "FAIL: dma.resc - UART missing 'DMA OK'"
+            overall=1
+        else
+            echo "PASS: dma.resc (DMA copy + cycle banner OK)"
+        fi
+        rm -f "$log"
+    fi
+else
+    echo "SKIP: dma.resc - build/dma_memcpy_demo.elf missing"
+fi
+# ===== END DMA =====
 
 if [ $overall -ne 0 ]; then
     exit 1

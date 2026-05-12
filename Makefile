@@ -33,6 +33,10 @@ DRIVER_SRC := \
     src/watchdog.S \
     src/powman.S  \
     src/tick.S
+# --- M3-C (DMA) additive append - keep on its own line so orchestrator can
+#     merge sibling milestone agents (timer, gpio/pads, pwm) without conflict.
+DRIVER_SRC += src/dma.S
+
 DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
 
 SRC      := $(DRIVER_SRC) src/main.S
