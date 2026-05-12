@@ -1,22 +1,20 @@
 @ =============================================================================
-@ main.S - M2 firmware: 150 MHz clock-tree bring-up + UART banner + blinky.
+@ examples/clocks_demo.S - end-to-end M2 clock-tree bring-up demo.
 @
-@ Boot path (post-bootrom -> _reset -> main):
-@   1. xosc_init                      -> XOSC stable @ 12 MHz
-@   2. pll_sys_150_mhz                -> pll_sys @ 150 MHz
-@   3. pll_usb_48_mhz                 -> pll_usb @  48 MHz
-@   4. clocks_init                    -> clk_sys = clk_peri = 150 MHz,
-@                                        clk_usb = clk_adc = 48 MHz
-@   5. tick_init                      -> TIMER0/1/WATCHDOG ticks @ 1 MHz
-@   6. watchdog_disable               -> explicit safe state
-@   7. gpio_led_init / uart0_init     -> reuse v0.1 drivers
-@   8. clocks_post_pll_uart_baud_fixup-> retune IBRD/FBRD for 150 MHz
-@   9. uart0_puts(banner)             -> "rp-asm M2 - clk_sys = 150 MHz\r\n"
-@  10. forever: toggle LED + busy-loop ~250 ms
+@ Boots the chip with the v0.1 startup, brings clk_sys up to 150 MHz from
+@ the 12 MHz crystal, fixes up the UART baud divisors for the new clock
+@ rate, and then prints a banner + blinks the LED at ~1 Hz.
 @
-@ Cycle math for the busy loop:
-@   3-cycle inner body (subs + bne) at 150 MHz = 20 ns / iteration.
-@   DELAY_COUNT = 12_500_000 -> 250 ms half-period -> ~2 Hz blink.
+@ Build:    make examples/clocks_demo.uf2  ->  build/clocks_demo.uf2
+@ Flash:    drop build/clocks_demo.uf2 onto the BOOTSEL drive
+@ Verify:   115200 8N1 on GP0; the banner should read
+@             rp-asm M2 - clk_sys = 150 MHz
+@           and the LED should toggle every ~1 second.
+@
+@ With clk_sys = 150 MHz the inner busy-loop runs ~12.5x faster than v0.1,
+@ so the delay constant has to grow accordingly:
+@   v0.1 (12 MHz):  DELAY_COUNT = 1_000_000  -> ~250 ms half period
+@   M2 (150 MHz):   DELAY_COUNT = 12_500_000 -> ~250 ms half period
 @ =============================================================================
 
     .syntax unified

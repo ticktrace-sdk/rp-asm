@@ -1,6 +1,11 @@
-"""End-to-end T1 test against the real v0.1 blinky firmware.
+"""End-to-end T1 test against the v0.1 blinky example.
 
-Loads build/blinky.elf, mocks the bare minimum of peripherals so the
+After M2 (clock-tree bring-up) the production firmware (build/blinky.elf)
+runs the M2 boot path, so we can no longer use it for v0.1 trace assertion.
+The v0.1 demo is preserved as `examples/blinky_v01.S` and built to
+`build/blinky_v01.elf` - that's what this test loads.
+
+Loads build/blinky_v01.elf, mocks the bare minimum of peripherals so the
 firmware can make forward progress, and asserts the *exact* sequence of
 MMIO writes the v0.1 startup + gpio_led_init + uart0_init + main loop
 must perform.
@@ -30,7 +35,7 @@ sys.path.insert(0, HERE)
 
 from harness import RP2350Sim  # noqa: E402
 
-BLINKY_ELF = os.path.join(REPO, "build", "blinky.elf")
+BLINKY_ELF = os.path.join(REPO, "build", "blinky_v01.elf")
 
 # Constants mirroring include/rp2350.inc - keep in sync with assembly source
 RESETS_BASE = 0x40020000
@@ -65,7 +70,10 @@ def _peripheral_writes(events):
 def _need_elf():
     if not os.path.exists(BLINKY_ELF):
         # build it from the repo Makefile - keeps the test self-contained
-        subprocess.check_call(["make", "-C", REPO], stdout=subprocess.DEVNULL)
+        subprocess.check_call(
+            ["make", "-C", REPO, "build/blinky_v01.uf2"],
+            stdout=subprocess.DEVNULL,
+        )
     if not os.path.exists(BLINKY_ELF):
         pytest.skip(f"{BLINKY_ELF} missing and `make` did not produce it")
 

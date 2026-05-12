@@ -1,0 +1,47 @@
+@ =============================================================================
+@ examples/blinky_v01.S - the v0.1 demo, preserved for regression testing.
+@
+@ Same exact sequence as the original src/main.S in v0.1: post-bootrom we
+@ have clk_sys = 12 MHz from XOSC pass-through, init UART (with 12 MHz
+@ baud divisors) and the LED, then loop printing "tick\r\n" while toggling
+@ the LED.
+@
+@ Useful for:
+@   - exercising the v0.1 MMIO write trace under T1 (tests/unicorn/test_v01_blinky.py)
+@   - confirming the existing 12 MHz UART driver still works without M2's
+@     clock-tree bring-up
+@ =============================================================================
+
+    .syntax unified
+    .cpu    cortex-m33
+    .thumb
+
+    .equ DELAY_COUNT, 1000000
+
+    .section .rodata.banner_v01, "a"
+banner:
+    .asciz "rp-asm v0.1 - every cycle matters\r\n"
+tick_msg:
+    .asciz "tick\r\n"
+
+    .section .text.main, "ax"
+    .thumb_func
+    .global  main
+main:
+    bl      gpio_led_init
+    bl      uart0_init
+
+    ldr     r0, =banner
+    bl      uart0_puts
+
+.Lloop:
+    bl      gpio_led_toggle
+
+    ldr     r0, =tick_msg
+    bl      uart0_puts
+
+    ldr     r0, =DELAY_COUNT
+1:  subs    r0, #1
+    bne     1b
+
+    b       .Lloop

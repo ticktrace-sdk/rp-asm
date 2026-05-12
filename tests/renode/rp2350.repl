@@ -178,3 +178,140 @@ elif request.IsRead:
 // XOR alias for LED toggles.
 sio: Memory.MappedMemory @ sysbus 0xd0000000
     size: 0x10000
+
+// ----- M2 clock-tree peripherals -------------------------------------------
+// These are minimum-fidelity stubs that auto-assert STABLE / LOCK / SELECTED
+// on the first relevant write so the firmware progresses past its spin
+// loops.  None of them model the actual frequency tree - that's T4 territory.
+
+// XOSC: read of STATUS returns STABLE (bit 31) once CTRL has been written.
+xosc: Python.PythonPeripheral @ sysbus 0x40048000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    state = {'enabled': False}
+elif request.IsRead:
+    off = request.Offset & 0xFFF
+    if off == 0x04:    # STATUS
+        request.Value = 0x80000000 if state['enabled'] else 0
+    else:
+        request.Value = 0
+elif request.IsWrite:
+    off = request.Offset & 0xFFF
+    if off == 0x00:    # CTRL
+        state['enabled'] = True
+'''
+
+// PLL_SYS: CS read returns LOCK (bit 31) once PWR has been written.
+pll_sys: Python.PythonPeripheral @ sysbus 0x40050000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    state = {'cs': 0, 'pwr_written': False}
+elif request.IsRead:
+    off = request.Offset & 0xFFF
+    if off == 0x00:
+        v = state['cs']
+        if state['pwr_written']:
+            v |= 0x80000000
+        request.Value = v
+    else:
+        request.Value = 0
+elif request.IsWrite:
+    off = request.Offset & 0xFFF
+    if off == 0x00:
+        state['cs'] = request.Value & 0x3F
+    elif off == 0x04:
+        state['pwr_written'] = True
+'''
+
+pll_usb: Python.PythonPeripheral @ sysbus 0x40058000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    state = {'cs': 0, 'pwr_written': False}
+elif request.IsRead:
+    off = request.Offset & 0xFFF
+    if off == 0x00:
+        v = state['cs']
+        if state['pwr_written']:
+            v |= 0x80000000
+        request.Value = v
+    else:
+        request.Value = 0
+elif request.IsWrite:
+    off = request.Offset & 0xFFF
+    if off == 0x00:
+        state['cs'] = request.Value & 0x3F
+    elif off == 0x04:
+        state['pwr_written'] = True
+'''
+
+// CLOCKS: per-clock SELECTED returns 1 << SRC of the most recent CTRL write.
+//   Per-clock layout: CTRL @ +0, DIV @ +4, SELECTED @ +8, stride 12 (0x0C).
+//   Sub-blocks we care about: CLK_REF @ 0x30, CLK_SYS @ 0x3C, CLK_PERI @ 0x48.
+clocks: Python.PythonPeripheral @ sysbus 0x40010000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    selected = {}     # block_off -> SELECTED value
+elif request.IsRead:
+    off = request.Offset & 0xFFF
+    blk = off - (off % 0x0C)
+    sub = off % 0x0C
+    if sub == 0x08:
+        request.Value = selected.get(blk, 1)
+    else:
+        request.Value = 0
+elif request.IsWrite:
+    off = request.Offset & 0xFFF
+    base = off & 0xFFF
+    blk = base - (base % 0x0C)
+    sub = base % 0x0C
+    if sub == 0x00:    # CTRL
+        # Use SRC field width = 2 for CLK_REF (blk 0x30), else 1.
+        # SYS / PERI / USB / ADC use SRC[0] = AUX vs primary; REF uses SRC[1:0].
+        if blk == 0x30:
+            src = request.Value & 0x3
+        else:
+            src = request.Value & 0x1
+        selected[blk] = 1 << src
+'''
+
+// WATCHDOG: dumb sink, returns 0.
+watchdog: Python.PythonPeripheral @ sysbus 0x400d8000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''
+
+// POWMAN: dumb sink (we don't actually program anything in M2).
+// Sized to 0x4000 so it doesn't overlap TICKS at 0x40108000.
+powman: Python.PythonPeripheral @ sysbus 0x40100000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''
+
+// TICKS: dumb sink.
+ticks: Python.PythonPeripheral @ sysbus 0x40108000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    pass
+elif request.IsRead:
+    request.Value = 0
+'''

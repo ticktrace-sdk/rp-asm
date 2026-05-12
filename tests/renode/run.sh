@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 # =============================================================================
-# tests/renode/run.sh - run the T3 Renode integration test for v0.1.
+# tests/renode/run.sh - run the T3 Renode integration tests.
 #
 # Behaviour:
 #   - if `renode` isn't installed, prints a SKIP line and exits 0 so CI
 #     keeps moving (T3 is a "slow tier" - install issues should not gate
 #     PRs).  Install instructions live in tests/renode/README.md.
-#   - otherwise drives blinky.resc, captures the console, and asserts on:
-#       * UART0 emitted "rp-asm v0.1"  (banner)
-#       * at least 4 LED toggles observed via the SIO XOR watchpoint
+#
+#   - otherwise drives every .resc in this directory, captures the console,
+#     and asserts on the per-script criteria below.
+#
+# Scripts:
+#   blinky.resc  - default v0.1 firmware in build/blinky.elf
+#                  ASSERT: UART contains "rp-asm" banner, >= 4 LED toggles
+#                  (since M2 the production main is the 150 MHz clocks demo;
+#                  we relaxed the banner to just "rp-asm" to cover both v0.1
+#                  and M2 banners)
+#   clocks.resc  - M2 clocks demo in build/clocks_demo.elf
+#                  ASSERT: UART contains "150 MHz", >= 1 LED toggle
 # =============================================================================
 
 set -u
@@ -26,45 +35,78 @@ if [ ! -f "$repo/build/blinky.elf" ]; then
     echo "INFO: build/blinky.elf missing - building..."
     make -C "$repo" >/dev/null
 fi
+if [ ! -f "$repo/build/clocks_demo.elf" ]; then
+    echo "INFO: build/clocks_demo.elf missing - building..."
+    make -C "$repo" build/clocks_demo.uf2 >/dev/null
+fi
 
 cd "$repo"
-log="$(mktemp)"
-trap "rm -f $log" EXIT
 
-# Renode flags:
-#   --console      - keep stdout in the foreground (no curses UI)
-#   --disable-xwt  - no GUI/analyzer windows
-#   --plain        - plain text, no colour codes
-#   -e             - run the given monitor command (semicolon-separated)
-#
-# We exit with `q` after the script finishes.  If the script gets stuck the
-# `timeout` envelope will kill it.
-timeout 60 renode --console --disable-xwt --plain \
-    -e "i @tests/renode/blinky.resc; q" \
-    >"$log" 2>&1
-rc=$?
+# ---- Helper: run one .resc, return path to log file --------------------------
+run_one() {
+    local resc="$1"
+    local log
+    log="$(mktemp)"
+    timeout 60 renode --console --disable-xwt --plain \
+        -e "i @${resc}; q" \
+        >"$log" 2>&1
+    local rc=$?
+    if [ $rc -ne 0 ] && [ $rc -ne 124 ]; then
+        echo "FAIL: renode (${resc}) exited rc=$rc" >&2
+        echo "----- Renode log (last 40 lines) -----" >&2
+        tail -40 "$log" >&2
+        echo "--------------------------------------" >&2
+        rm -f "$log"
+        return 1
+    fi
+    echo "$log"
+}
 
-echo "----- Renode log (last 40 lines) -----"
-tail -40 "$log"
-echo "--------------------------------------"
+overall=0
 
-if [ $rc -ne 0 ] && [ $rc -ne 124 ]; then
-    echo "FAIL: renode exited rc=$rc"
+# ---- 1. blinky.resc - the existing image (now M2 firmware) ------------------
+log="$(run_one "tests/renode/blinky.resc")" || { overall=1; }
+if [ -n "${log:-}" ] && [ -f "$log" ]; then
+    echo "----- blinky.resc log (last 30 lines) -----"
+    tail -30 "$log"
+    echo "-------------------------------------------"
+    if ! grep -q "rp-asm" "$log"; then
+        echo "FAIL: blinky.resc - UART missing 'rp-asm' banner"
+        overall=1
+    fi
+    toggles="$(grep -c 'LED_TOGGLE' "$log" || true)"
+    if [ "$toggles" -lt 1 ]; then
+        echo "FAIL: blinky.resc - only $toggles LED toggle(s) observed"
+        overall=1
+    else
+        echo "PASS: blinky.resc (banner OK, $toggles LED toggles)"
+    fi
+    rm -f "$log"
+fi
+
+# ---- 2. clocks.resc - M2 clocks demo ----------------------------------------
+log="$(run_one "tests/renode/clocks.resc")" || { overall=1; }
+if [ -n "${log:-}" ] && [ -f "$log" ]; then
+    echo "----- clocks.resc log (last 30 lines) -----"
+    tail -30 "$log"
+    echo "-------------------------------------------"
+    if ! grep -q "150 MHz" "$log"; then
+        echo "FAIL: clocks.resc - UART missing '150 MHz' substring"
+        overall=1
+    fi
+    toggles="$(grep -c 'LED_TOGGLE' "$log" || true)"
+    if [ "$toggles" -lt 1 ]; then
+        echo "FAIL: clocks.resc - only $toggles LED toggle(s) observed"
+        overall=1
+    else
+        echo "PASS: clocks.resc (banner OK, $toggles LED toggles)"
+    fi
+    rm -f "$log"
+fi
+
+if [ $overall -ne 0 ]; then
     exit 1
 fi
 
-# Banner check
-if ! grep -q "rp-asm v0.1" "$log"; then
-    echo "FAIL: UART output did not contain 'rp-asm v0.1' banner"
-    exit 1
-fi
-
-# LED toggle check - InfoLog 'LED_TOGGLE' fires once per XOR store.
-toggles="$(grep -c 'LED_TOGGLE' "$log" || true)"
-if [ "$toggles" -lt 4 ]; then
-    echo "FAIL: only $toggles LED toggle(s) observed (need >= 4)"
-    exit 1
-fi
-
-echo "PASS: renode T3 (banner OK, $toggles LED toggles)"
+echo "PASS: renode T3 (all scripts)"
 exit 0

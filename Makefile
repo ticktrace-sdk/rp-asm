@@ -1,5 +1,6 @@
 ## rp-asm - pure-assembly RP2350 SDK
 ##   make           build/blinky.uf2
+##   make examples  build/<name>.uf2 for every examples/<name>.S
 ##   make dump      objdump -d of the ELF
 ##   make clean
 ##
@@ -17,17 +18,40 @@ OBJDUMP  := arm-none-eabi-objdump
 SIZE     := arm-none-eabi-size
 
 ASFLAGS  := -mcpu=cortex-m33 -mthumb -mimplicit-it=always -I include --warn
-LDFLAGS  := -T link/sram.ld -nostdlib --gc-sections -Map=build/blinky.map
+LDFLAGS  := -T link/sram.ld -nostdlib --gc-sections
 
-SRC      := src/startup.S src/main.S src/uart.S src/gpio.S
+# Driver / startup objects shared by every image.  src/main.S supplies the
+# default `main` symbol for build/blinky.elf; examples replace it via
+# DRIVER_SRC + the example's own .S.
+DRIVER_SRC := \
+    src/startup.S \
+    src/uart.S    \
+    src/gpio.S    \
+    src/xosc.S    \
+    src/pll.S     \
+    src/clocks.S  \
+    src/watchdog.S \
+    src/powman.S  \
+    src/tick.S
+DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
+
+SRC      := $(DRIVER_SRC) src/main.S
 OBJ      := $(patsubst src/%.S, build/%.o, $(SRC))
 
 TARGET   := build/blinky
 LOAD_ADDR := 0x20000000
 
-.PHONY: all dump clean test test-t1 test-t2 test-t3 test-all
+# Examples auto-discovered.
+EXAMPLE_SRC := $(wildcard examples/*.S)
+EXAMPLE_UF2 := $(patsubst examples/%.S, build/%.uf2, $(EXAMPLE_SRC))
+
+.PHONY: all examples dump clean test test-t1 test-t2 test-t3 test-all
+.PRECIOUS: build/%.elf build/%.bin
 all: $(TARGET).uf2
 
+examples: $(EXAMPLE_UF2)
+
+# -------------------------------------------------------------- main image
 $(TARGET).uf2: $(TARGET).bin tools/uf2.py
 	@python3 tools/uf2.py $< $(LOAD_ADDR) $@
 	@echo "  UF2     $@"
@@ -38,10 +62,28 @@ $(TARGET).bin: $(TARGET).elf
 
 $(TARGET).elf: $(OBJ) link/sram.ld
 	@mkdir -p $(@D)
-	@$(LD) $(LDFLAGS) -o $@ $(OBJ)
+	@$(LD) $(LDFLAGS) -Map=build/blinky.map -o $@ $(OBJ)
 	@$(SIZE) $@
 
-build/%.o: src/%.S include/rp2350.inc
+# -------------------------------------------------------------- examples
+# Each examples/<name>.S supplies its own `main` symbol and is linked
+# against every src/* driver EXCEPT src/main.S (avoids symbol collision).
+build/%.elf: examples/%.S $(DRIVER_OBJ) link/sram.ld
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o build/$*.example.o $<
+	@$(LD) $(LDFLAGS) -Map=build/$*.map -o $@ $(DRIVER_OBJ) build/$*.example.o
+	@$(SIZE) $@
+
+build/%.bin: build/%.elf
+	@$(OBJCOPY) -O binary $< $@
+	@echo "  BIN     $@"
+
+build/%.uf2: build/%.bin tools/uf2.py
+	@python3 tools/uf2.py $< $(LOAD_ADDR) $@
+	@echo "  UF2     $@"
+
+# -------------------------------------------------------------- objects
+build/%.o: src/%.S include/rp2350.inc include/clocks.inc
 	@mkdir -p $(@D)
 	@$(ASM) $(ASFLAGS) -o $@ $<
 	@echo "  AS      $<"
@@ -59,7 +101,7 @@ clean:
 
 PYTEST ?= python3 -m pytest -q
 
-test-t1: $(TARGET).elf
+test-t1: $(TARGET).elf $(EXAMPLE_UF2)
 	@echo "==== T1 (Unicorn host harness) ===="
 	@$(PYTEST) tests/unicorn
 	@echo "PASS: T1"

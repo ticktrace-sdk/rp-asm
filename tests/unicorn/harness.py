@@ -272,6 +272,116 @@ class RP2350Sim:
 
         self.on_write(RESETS_BASE, 0x4000, cb)
 
+    def mock_xosc_stable(self) -> None:
+        """Auto-assert XOSC_STATUS.STABLE after the first write to XOSC_CTRL.
+
+        Mirrors silicon: once the firmware enables XOSC, the crystal needs a
+        startup window to ring up.  We model "ringup is instantaneous" by
+        flipping STABLE the moment CTRL is written; the spin loop in
+        xosc_init then exits on the very next read.
+        """
+        XOSC_BASE = 0x40048000
+        XOSC_CTRL = 0x00
+        XOSC_STATUS = 0x04
+        XOSC_STABLE = 1 << 31
+
+        # Pre-state: not stable.
+        self.poke32(XOSC_BASE + XOSC_STATUS, 0)
+
+        def cb(addr: int, value: int, size: int) -> None:
+            offset = (addr - XOSC_BASE) & 0xFFF
+            if offset == XOSC_CTRL:
+                self.poke32(XOSC_BASE + XOSC_STATUS, XOSC_STABLE)
+
+        self.on_write(XOSC_BASE, 0x4000, cb)
+
+    def mock_pll_locked(self, base: int) -> None:
+        """Auto-assert CS.LOCK after the first write to PLL_PWR.
+
+        On real silicon LOCK takes a few hundred us to settle.  We model an
+        instantaneous lock so the spin loop exits.  Pass either PLL_SYS_BASE
+        (0x40050000) or PLL_USB_BASE (0x40058000).
+        """
+        PLL_CS = 0x00
+        PLL_PWR = 0x04
+        PLL_LOCK = 1 << 31
+
+        # Default CS = 0 (REFDIV=0, no LOCK)
+        self.poke32(base + PLL_CS, 0)
+
+        # CS read returns the stored REFDIV plus LOCK once we have armed it.
+        # We track armed[0] so the test can also verify it spins forever
+        # without the mock.
+        armed = [False]
+
+        def write_cb(addr: int, value: int, size: int) -> None:
+            offset = (addr - base) & 0xFFF
+            base_off = offset & 0x0FF
+            alias = offset & 0x3000
+            # PWR write at any alias arms the lock.
+            if base_off == PLL_PWR:
+                armed[0] = True
+            # If firmware writes CS (REFDIV), preserve our LOCK shadow on top.
+            if base_off == PLL_CS and alias == 0:
+                cur = value & 0x3F
+                if armed[0]:
+                    cur |= PLL_LOCK
+                self.poke32(base + PLL_CS, cur)
+
+        def read_cb(addr: int, size: int):
+            offset = (addr - base) & 0xFFF
+            if offset == PLL_CS:
+                cur = self.peek32(base + PLL_CS)
+                if armed[0]:
+                    cur |= PLL_LOCK
+                return cur
+            return None
+
+        self.on_write(base, 0x4000, write_cb)
+        self.on_read(base, 0x4000, read_cb)
+
+    def mock_clk_selected(self) -> None:
+        """Auto-assert CLOCKS.<clk>_SELECTED to mirror the requested SRC.
+
+        The clk_init code spins on the SELECTED bit becoming the one-hot of
+        the SRC field it just wrote.  In silicon the glitchless mux takes a
+        few clk_ref cycles to settle; in the harness we settle in zero time.
+        """
+        CLOCKS_BASE = 0x40010000
+        # (offset_of_CTRL, offset_of_SELECTED, src_lsb, src_width)
+        # CTRL at +0, SELECTED at +8 within each per-clock block.
+        CLK_BLOCKS = {
+            0x30: (0, 2),   # CLK_REF: SRC[1:0]
+            0x3C: (0, 1),   # CLK_SYS: SRC[0:0]
+        }
+
+        def cb(addr: int, value: int, size: int) -> None:
+            offset = (addr - CLOCKS_BASE) & 0xFFF
+            for blk_off, (src_lsb, src_width) in CLK_BLOCKS.items():
+                if offset == blk_off:  # CTRL plain write
+                    src = (value >> src_lsb) & ((1 << src_width) - 1)
+                    selected = 1 << src
+                    self.poke32(CLOCKS_BASE + blk_off + 8, selected)
+
+        self.on_write(CLOCKS_BASE, 0x1000, cb)
+
+    def mock_resets_done_for(self, *bits: int) -> None:
+        """Variant of mock_resets_done that pre-clears the named reset bits.
+
+        Used by tests that don't want the startup-time RESETS_RESET CLR to
+        affect their RESET_DONE accounting (e.g. PLL bring-up, which needs
+        bits 14/15 cleared on demand).  Just a convenience over
+        mock_resets_done().
+        """
+        self.mock_resets_done()
+        # Pre-clear the bits the test expects to be available immediately.
+        RESETS_BASE = 0x40020000
+        cur = self.peek32(RESETS_BASE)
+        for b in bits:
+            cur &= ~(1 << b)
+        self.poke32(RESETS_BASE, cur)
+        self.poke32(RESETS_BASE + 0x08, ~cur & 0xFFFFFFFF)
+
     def mock_uart0_tx(self) -> List[int]:
         """Capture every byte written to UART0 DR.  Returns the list it
         appends to so a test can read transmitted bytes incrementally."""
