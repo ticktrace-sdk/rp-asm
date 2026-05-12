@@ -205,6 +205,31 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
 fi
 # ===== END GPIO =====
 
+# ===== SPI (M4-G) =====
+# ---- 7. spi.resc - M4-G SPI loopback demo (skip if elf missing) ------------
+if [ ! -f "$repo/build/spi_loopback_demo.elf" ]; then
+    echo "INFO: build/spi_loopback_demo.elf missing - building..."
+    make -C "$repo" build/spi_loopback_demo.uf2 >/dev/null
+fi
+if [ -f "$repo/build/spi_loopback_demo.elf" ]; then
+    log="$(run_one "tests/renode/spi.resc")" || { overall=1; }
+    if [ -n "${log:-}" ] && [ -f "$log" ]; then
+        echo "----- spi.resc log (last 30 lines) -----"
+        tail -30 "$log"
+        echo "-----------------------------------------"
+        if ! grep -q "PASS" "$log"; then
+            echo "FAIL: spi.resc - UART missing 'PASS' (loopback verify failed)"
+            overall=1
+        else
+            echo "PASS: spi.resc (PL022 LBM end-to-end OK)"
+        fi
+        rm -f "$log"
+    fi
+else
+    echo "SKIP: spi.resc - build/spi_loopback_demo.elf missing"
+fi
+# ===== END SPI =====
+
 if [ $overall -ne 0 ]; then
     exit 1
 fi
