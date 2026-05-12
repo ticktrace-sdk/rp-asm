@@ -50,6 +50,10 @@ if [ ! -f "$repo/build/dma_memcpy_demo.elf" ]; then
     echo "INFO: build/dma_memcpy_demo.elf missing - building..."
     make -C "$repo" build/dma_memcpy_demo.uf2 >/dev/null
 fi
+if [ ! -f "$repo/build/gpio_demo.elf" ]; then
+    echo "INFO: build/gpio_demo.elf missing - building..."
+    make -C "$repo" build/gpio_demo.uf2 >/dev/null
+fi
 
 cd "$repo"
 
@@ -182,6 +186,24 @@ else
     echo "SKIP: dma.resc - build/dma_memcpy_demo.elf missing"
 fi
 # ===== END DMA =====
+
+# ===== GPIO (M3-A) =====
+# ---- 6. gpio.resc - M3-A GPIO demo on pins 22/23/24 -------------------------
+log="$(run_one "tests/renode/gpio.resc")" || { overall=1; }
+if [ -n "${log:-}" ] && [ -f "$log" ]; then
+    echo "----- gpio.resc log (last 30 lines) -----"
+    tail -30 "$log"
+    echo "------------------------------------------"
+    sio_events="$(grep -cE 'GPIO_OUT_(SET|CLR|XOR)|GPIO_OE_SET' "$log" || true)"
+    if [ "$sio_events" -lt 8 ]; then
+        echo "FAIL: gpio.resc - only $sio_events SIO GPIO_OUT events (want >= 8)"
+        overall=1
+    else
+        echo "PASS: gpio.resc ($sio_events SIO_GPIO_OUT events)"
+    fi
+    rm -f "$log"
+fi
+# ===== END GPIO =====
 
 if [ $overall -ne 0 ]; then
     exit 1
