@@ -315,3 +315,130 @@ if request.IsInit:
 elif request.IsRead:
     request.Value = 0
 '''
+
+// ===== DMA (M3-C) ==========================================================
+// Functional model: per-channel READ_ADDR/WRITE_ADDR/TRANS_COUNT/CTRL +
+// the four global registers we touch (MULTI_CHAN_TRIGGER, CHAN_ABORT,
+// SNIFF_CTRL, SNIFF_DATA, INTR/INTE0..3).  When the firmware writes a
+// triggering alias we synchronously copy (count * data_size) bytes from
+// READ_ADDR to WRITE_ADDR via the SystemBus.
+//
+// Sized at 0x10000 to cover per-channel block (16 ch * 0x40 = 0x400),
+// global regs around 0x400..0x44C, debug aliases at 0x800+, and the four
+// atomic alias windows up to 0x4000.  We use 0x10000 to be safe.
+dma: Python.PythonPeripheral @ sysbus 0x50000000
+    size: 0x10000
+    initable: true
+    script: '''
+if request.IsInit:
+    # Per-channel state: 16 dicts of { read, write, count, ctrl }
+    chan = [{"read": 0, "write": 0, "count": 0, "ctrl": 0} for _ in range(16)]
+    # Global sniffer state (CRC32 not modelled; we just hold a register)
+    sniff = {"ctrl": 0, "data": 0}
+    # IRQ state (W1C INTR)
+    irq = {"intr": 0, "inte": [0, 0, 0, 0]}
+    # Resolve a SystemBus reference for the synchronous copy.  PythonPeripheral
+    # doesn't expose Machine; we go via the EmulationManager singleton and
+    # pick the (single) machine in this emulation.
+    from Antmicro.Renode.Core import EmulationManager
+    _emu = EmulationManager.Instance.CurrentEmulation
+    _bus = list(_emu.Machines)[0].SystemBus
+elif request.IsRead:
+    off = request.Offset & 0xFFFF
+    base = off & 0xFFF
+    # Per-channel block
+    if base < 0x400:
+        ch = base // 0x40
+        sub = base % 0x40
+        # CTRL_TRIG / AL1_CTRL / AL2_CTRL / AL3_CTRL all read CTRL value.
+        # BUSY (bit 26) is always 0 since the copy completes synchronously
+        # at trigger time.
+        if sub in (0x0C, 0x10, 0x20, 0x30):
+            request.Value = chan[ch]["ctrl"] & ~(1 << 26)
+        elif sub == 0x00:
+            request.Value = chan[ch]["read"]
+        elif sub == 0x04:
+            request.Value = chan[ch]["write"]
+        elif sub == 0x08:
+            request.Value = chan[ch]["count"]
+        else:
+            request.Value = 0
+    elif base == 0x400:
+        request.Value = irq["intr"]
+    elif base in (0x404, 0x414, 0x424, 0x434):
+        request.Value = irq["inte"][(base - 0x404) // 0x10]
+    elif base == 0x434:
+        request.Value = sniff["ctrl"]
+    elif base == 0x438:
+        request.Value = sniff["data"]
+    elif base == 0x444:
+        # CHAN_ABORT auto-clears: no channel is ever actually busy in our
+        # model so abort completes instantly.
+        request.Value = 0
+    elif base == 0x448:
+        request.Value = 16            # N_CHANNELS
+    else:
+        request.Value = 0
+elif request.IsWrite:
+    off = request.Offset & 0xFFFF
+    base = off & 0xFFF
+    val = request.Value & 0xFFFFFFFF
+    # Per-channel block
+    if base < 0x400:
+        ch = base // 0x40
+        sub = base % 0x40
+        c = chan[ch]
+        # Update the right shadow register
+        if sub in (0x00, 0x14, 0x28, 0x3C):           # READ_ADDR / aliases
+            c["read"] = val
+        elif sub in (0x04, 0x18, 0x34, 0x2C):         # WRITE_ADDR / aliases
+            c["write"] = val
+        elif sub in (0x08, 0x1C, 0x24, 0x38):         # TRANS_COUNT / aliases
+            c["count"] = val
+        elif sub in (0x0C, 0x10, 0x20, 0x30):         # CTRL / aliases
+            c["ctrl"] = val
+        # Triggering offsets: 0x0C, 0x1C, 0x2C, 0x3C
+        if sub in (0x0C, 0x1C, 0x2C, 0x3C):
+            ds = (c["ctrl"] >> 2) & 0x3
+            elt = {0: 1, 1: 2, 2: 4}.get(ds, 1)
+            n = c["count"] * elt
+            if n > 0 and c["read"] != 0 and c["write"] != 0:
+                # Synchronous copy via SystemBus.
+                src = c["read"]
+                dst = c["write"]
+                for i in range(n):
+                    b = _bus.ReadByte(src + i)
+                    _bus.WriteByte(dst + i, b)
+            # Latch interrupt for this channel (if not IRQ_QUIET)
+            if not (c["ctrl"] & (1 << 23)):
+                irq["intr"] |= (1 << ch)
+    elif base == 0x400:
+        # W1C
+        irq["intr"] &= ~val
+    elif base in (0x404, 0x414, 0x424, 0x434):
+        irq["inte"][(base - 0x404) // 0x10] = val
+    elif base == 0x430:
+        # MULTI_CHAN_TRIGGER: write 1<<n to trigger channel n
+        for ch in range(16):
+            if val & (1 << ch):
+                c = chan[ch]
+                ds = (c["ctrl"] >> 2) & 0x3
+                elt = {0: 1, 1: 2, 2: 4}.get(ds, 1)
+                n = c["count"] * elt
+                if n > 0 and c["read"] != 0 and c["write"] != 0:
+                    src = c["read"]
+                    dst = c["write"]
+                    for i in range(n):
+                        b = _bus.ReadByte(src + i)
+                        _bus.WriteByte(dst + i, b)
+                if not (c["ctrl"] & (1 << 23)):
+                    irq["intr"] |= (1 << ch)
+    elif base == 0x434:
+        sniff["ctrl"] = val
+    elif base == 0x438:
+        sniff["data"] = val
+    elif base == 0x444:
+        # CHAN_ABORT - no-op (everything is "already finished" in our model)
+        pass
+'''
+// ===== END DMA =============================================================
