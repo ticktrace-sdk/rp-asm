@@ -1,0 +1,38 @@
+:name: rp-asm M4-E UART loopback
+:description: Loads build/uart_loopback_demo.elf, cross-wires UART0 <-> UART1
+:             via Renode's UARTHub, runs for 200 ms simulated, and dumps both
+:             UART history buffers.
+
+# ------------------------------------------------------------------- Setup
+$bin?=@build/uart_loopback_demo.elf
+
+mach create "rp2350"
+machine LoadPlatformDescription @tests/renode/rp2350.repl
+
+showAnalyzer uart0
+showAnalyzer uart1
+
+# ------------------------------------------------------------------- Image
+sysbus LoadELF $bin
+cpu0 VectorTableOffset 0x20000000
+
+# ------------------------------------------------------------ Cross-wiring
+# Renode's UARTHub forwards every byte transmitted by any attached UART to
+# every other attached UART (with `loopback` flag controlling whether a UART
+# also receives its own bytes).  We use loopback=false so UART0 only sees
+# UART1's bytes and vice versa - exactly the cross-wiring uart_loopback_demo
+# expects (TX0 -> RX1, TX1 -> RX0).
+emulation CreateUARTHub "loop" false
+connector Connect sysbus.uart0 loop
+connector Connect sysbus.uart1 loop
+
+# ----------------------------------------------------------- Run + dump
+emulation RunFor "00:00:00.500"
+
+echo "----- UART0 dump -----"
+uart0 DumpHistoryBuffer
+
+echo "----- UART1 dump -----"
+uart1 DumpHistoryBuffer
+
+echo "----- Done -----"

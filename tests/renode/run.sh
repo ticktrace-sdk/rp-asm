@@ -205,6 +205,32 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
 fi
 # ===== END GPIO =====
 
+# ===== UART (M4-E) =====
+# ---- 7. uart.resc - M4-E UART0 <-> UART1 loopback demo ----------------------
+# Build the demo if needed.
+if [ ! -f "$repo/build/uart_loopback_demo.elf" ]; then
+    echo "INFO: build/uart_loopback_demo.elf missing - building..."
+    make -C "$repo" build/uart_loopback_demo.uf2 >/dev/null
+fi
+log="$(run_one "tests/renode/uart.resc")" || { overall=1; }
+if [ -n "${log:-}" ] && [ -f "$log" ]; then
+    echo "----- uart.resc log (last 40 lines) -----"
+    tail -40 "$log"
+    echo "------------------------------------------"
+    # The demo emits "uart-loopback OK" on UART0 if and only if both
+    # ping/pong round-trips succeeded.  The cross-wiring in uart.resc
+    # routes UART0_TX -> UART1_RX and back, so the bytes must traverse
+    # both the PL011 model AND the connector.
+    if ! grep -q "uart-loopback OK" "$log"; then
+        echo "FAIL: uart.resc - missing 'uart-loopback OK' on UART0 (loopback failed)"
+        overall=1
+    else
+        echo "PASS: uart.resc (UART0 <-> UART1 loopback succeeded)"
+    fi
+    rm -f "$log"
+fi
+# ===== END UART =====
+
 if [ $overall -ne 0 ]; then
     exit 1
 fi
