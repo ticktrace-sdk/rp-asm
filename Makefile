@@ -42,6 +42,13 @@ DRIVER_SRC += src/i2c.S
 DRIVER_SRC += src/spi.S
 # --- M4-H (USB) additive append - device controller + CDC-ACM.
 DRIVER_SRC += src/usb.S
+# --- M5-L (SHA256) additive append - hardware SHA-256 accelerator.
+DRIVER_SRC += src/sha256.S
+# --- M5-J (ADC, TRNG) additive append.
+DRIVER_SRC += src/adc.S
+DRIVER_SRC += src/trng.S
+# --- M5-I (PIO) additive append - controller side.  pioasm deferred.
+DRIVER_SRC += src/pio.S
 
 DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
 
