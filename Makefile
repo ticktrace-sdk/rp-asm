@@ -36,6 +36,9 @@ DRIVER_SRC := \
 # --- M3-C (DMA) additive append - keep on its own line so orchestrator can
 #     merge sibling milestone agents (timer, gpio/pads, pwm) without conflict.
 DRIVER_SRC += src/dma.S
+# --- M4-H (USB) additive append - keep on its own line so orchestrator can
+#     merge sibling M4 agents (UART, I2C, SPI) without conflict.
+DRIVER_SRC += src/usb.S
 
 DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
 

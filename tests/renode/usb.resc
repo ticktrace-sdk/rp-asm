@@ -1,0 +1,28 @@
+:name: rp-asm M4-H USB CDC echo demo
+:description: Loads build/usb_cdc_echo_demo.elf onto the simulated RP2350,
+:             runs for 50 ms, asserts the firmware reached
+:             usb_device_init's MAIN_CTRL = CONTROLLER_EN store.
+
+# ---------------------------------------------------------------------- Setup
+$bin?=@build/usb_cdc_echo_demo.elf
+
+mach create "rp2350-usb"
+machine LoadPlatformDescription @tests/renode/rp2350.repl
+
+showAnalyzer uart0
+
+# ---------------------------------------------------------------------- Image
+sysbus LoadELF $bin
+cpu0 VectorTableOffset 0x20000000
+
+# Bus monitor for MAIN_CTRL is implicit - the inline PythonPeripheral logs
+# every USB_MAIN_CTRL store with "USB_MAIN_CTRL <- 0xNNNN".  The .sh script
+# greps for that line.
+
+# ---------------------------------------------------------------------- Run
+emulation RunFor "00:00:00.050"
+
+echo "----- UART0 dump -----"
+uart0 DumpHistoryBuffer
+
+echo "----- Done -----"
