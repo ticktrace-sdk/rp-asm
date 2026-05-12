@@ -104,6 +104,31 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
     rm -f "$log"
 fi
 
+# ===== TIMER (M3-B) =====
+# ---- 3. timer.resc - M3-B TIMER0 ALARM0 IRQ blink demo -----------------------
+# Build the demo if needed.
+if [ ! -f "$repo/build/timer_alarm_demo.elf" ]; then
+    echo "INFO: build/timer_alarm_demo.elf missing - building..."
+    make -C "$repo" build/timer_alarm_demo.uf2 >/dev/null
+fi
+log="$(run_one "tests/renode/timer.resc")" || { overall=1; }
+if [ -n "${log:-}" ] && [ -f "$log" ]; then
+    echo "----- timer.resc log (last 30 lines) -----"
+    tail -30 "$log"
+    echo "------------------------------------------"
+    toggles="$(grep -c 'LED_TOGGLE' "$log" || true)"
+    # 100 ms alarm period over 1 simulated second -> at least 9 toggles
+    # (allow 1 startup grace period).
+    if [ "$toggles" -lt 9 ]; then
+        echo "FAIL: timer.resc - only $toggles LED toggle(s) observed (need >= 9)"
+        overall=1
+    else
+        echo "PASS: timer.resc ($toggles LED toggles via TIMER0 ALARM0 ISR)"
+    fi
+    rm -f "$log"
+fi
+# ===== END TIMER =====
+
 if [ $overall -ne 0 ]; then
     exit 1
 fi
