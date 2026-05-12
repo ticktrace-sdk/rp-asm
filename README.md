@@ -20,8 +20,15 @@ Python is only used host-side, for a UF2 packer and the test harness.
 | M7        | XIP flash boot, OTP, BOOTRAM, glitch detector          | deferred |
 | M8        | example gallery + cycle-counting docs                  | deferred |
 
-**Tests:** 219 T1 (Unicorn) + 3 T2 (QEMU) all green. T3 (Renode) green
-where renode is installed, cleanly skips otherwise.
+**Tests:** **229 T1** (Unicorn) + **3 T2** (QEMU) all green — every
+public driver function has at least one register-trace assertion. T3
+(Renode) green where renode is installed, cleanly skips otherwise.
+
+| Tier | Coverage |
+| ---- | -------- |
+| T1   | 229 cases across 14 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio) |
+| T2   | mps2-an505 sanity + ISA arithmetic + SysTick polled COUNTFLAG |
+| T3   | 10 .resc scripts: blinky, clocks, gpio, timer, pwm, dma, uart loopback, i2c eeprom, spi loopback, usb controller bring-up |
 
 **Image size:** the M2-default `build/blinky.uf2` (clock bring-up +
 banner + blink) is 728 bytes of `.text`. Every peripheral demo lives in
