@@ -40,6 +40,8 @@ DRIVER_SRC += src/dma.S
 DRIVER_SRC += src/i2c.S
 # --- M4-G (SPI) additive append - PL022, both instances.
 DRIVER_SRC += src/spi.S
+# --- M4-H (USB) additive append - device controller + CDC-ACM.
+DRIVER_SRC += src/usb.S
 
 DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
 

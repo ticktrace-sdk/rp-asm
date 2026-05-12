@@ -280,6 +280,28 @@ else
 fi
 # ===== END SPI =====
 
+# ===== USB (M4-H) =====
+# ---- 10. usb.resc - M4-H USB CDC echo demo --------------------------------
+if [ ! -f "$repo/build/usb_cdc_echo_demo.elf" ]; then
+    echo "INFO: build/usb_cdc_echo_demo.elf missing - building..."
+    make -C "$repo" build/usb_cdc_echo_demo.uf2 >/dev/null
+fi
+log="$(run_one "tests/renode/usb.resc")" || { overall=1; }
+if [ -n "${log:-}" ] && [ -f "$log" ]; then
+    echo "----- usb.resc log (last 30 lines) -----"
+    tail -30 "$log"
+    echo "------------------------------------------"
+    if ! grep -q "USB_MAIN_CTRL <-" "$log"; then
+        echo "FAIL: usb.resc - USB_MAIN_CTRL store never logged (firmware may"
+        echo "      have hung before reaching usb_device_init's controller-enable)"
+        overall=1
+    else
+        echo "PASS: usb.resc (USB controller MAIN_CTRL store landed)"
+    fi
+    rm -f "$log"
+fi
+# ===== END USB =====
+
 if [ $overall -ne 0 ]; then
     exit 1
 fi

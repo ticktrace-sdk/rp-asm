@@ -896,3 +896,70 @@ elif request.IsWrite:
         state["ris"] = state["ris"] & ((~(val & 0x3)) & 0xFFFFFFFF)
 '''
 // ===== END SPI =============================================================
+
+// ===== USB (M4-H) ===========================================================
+// USB device controller - permissive model that lets the firmware progress
+// through usb_device_init.  See tests/renode/usb_peripheral.py for the
+// reference Python implementation; keep this inline copy in sync.
+//
+// DPRAM (0x50100000) is a flat MappedMemory region: writes and reads land
+// without side effects, which is correct enough for the firmware's bring-up.
+// The controller registers (0x50110000) get the PythonPeripheral treatment
+// so we can log the MAIN_CTRL store and W1C the SIE_STATUS / BUFF_STATUS bits.
+usb_dpram: Memory.MappedMemory @ sysbus 0x50100000
+    size: 0x1000
+
+usb_regs: Python.PythonPeripheral @ sysbus 0x50110000
+    size: 0x1000
+    initable: true
+    script: '''
+if request.IsInit:
+    state = {
+        'main_ctrl':   0,
+        'sie_ctrl':    0,
+        'sie_status':  0,
+        'buff_status': 0,
+        'inte':        0,
+        'intr':        0,
+        'addr_endp':   0,
+        'usb_muxing':  0,
+        'usb_pwr':     0,
+    }
+elif request.IsRead:
+    off = request.Offset & 0xFFFF
+    if   off == 0x000: request.Value = state['addr_endp']
+    elif off == 0x040: request.Value = state['main_ctrl']
+    elif off == 0x04C: request.Value = state['sie_ctrl']
+    elif off == 0x050: request.Value = state['sie_status']
+    elif off == 0x058: request.Value = state['buff_status']
+    elif off == 0x074: request.Value = state['usb_muxing']
+    elif off == 0x078: request.Value = state['usb_pwr']
+    elif off == 0x08C: request.Value = state['intr']
+    elif off == 0x090: request.Value = state['inte']
+    elif off == 0x098: request.Value = state['intr'] & state['inte']
+    else:              request.Value = 0
+elif request.IsWrite:
+    off = request.Offset & 0xFFFF
+    val = request.Value & 0xFFFFFFFF
+    if   off == 0x000:
+        state['addr_endp'] = val
+        self.Log(LogLevel.Info, 'USB_ADDR_ENDP <- 0x{0:08X}'.format(val))
+    elif off == 0x040:
+        state['main_ctrl'] = val
+        self.Log(LogLevel.Info, 'USB_MAIN_CTRL <- 0x{0:08X}'.format(val))
+    elif off == 0x04C:
+        state['sie_ctrl'] = val
+    elif off == 0x050:
+        state['sie_status'] = state['sie_status'] & ((~val) & 0xFFFFFFFF)
+    elif off == 0x058:
+        state['buff_status'] = state['buff_status'] & ((~val) & 0xFFFFFFFF)
+    elif off == 0x074:
+        state['usb_muxing'] = val
+    elif off == 0x078:
+        state['usb_pwr'] = val
+    elif off == 0x08C:
+        state['intr'] = state['intr'] & ((~val) & 0xFFFFFFFF)
+    elif off == 0x090:
+        state['inte'] = val
+'''
+// ===== END USB =============================================================
