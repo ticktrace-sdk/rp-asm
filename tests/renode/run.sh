@@ -39,6 +39,10 @@ if [ ! -f "$repo/build/clocks_demo.elf" ]; then
     echo "INFO: build/clocks_demo.elf missing - building..."
     make -C "$repo" build/clocks_demo.uf2 >/dev/null
 fi
+if [ ! -f "$repo/build/gpio_demo.elf" ]; then
+    echo "INFO: build/gpio_demo.elf missing - building..."
+    make -C "$repo" build/gpio_demo.uf2 >/dev/null
+fi
 
 cd "$repo"
 
@@ -100,6 +104,23 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
         overall=1
     else
         echo "PASS: clocks.resc (banner OK, $toggles LED toggles)"
+    fi
+    rm -f "$log"
+fi
+
+# ---- 3. gpio.resc - M3-A GPIO demo on pins 22/23/24 -------------------------
+log="$(run_one "tests/renode/gpio.resc")" || { overall=1; }
+if [ -n "${log:-}" ] && [ -f "$log" ]; then
+    echo "----- gpio.resc log (last 30 lines) -----"
+    tail -30 "$log"
+    echo "------------------------------------------"
+    # Count any GPIO_OUT_* watchpoint hits
+    sio_events="$(grep -cE 'GPIO_OUT_(SET|CLR|XOR)|GPIO_OE_SET' "$log" || true)"
+    if [ "$sio_events" -lt 8 ]; then
+        echo "FAIL: gpio.resc - only $sio_events SIO GPIO_OUT events (want >= 8)"
+        overall=1
+    else
+        echo "PASS: gpio.resc ($sio_events SIO_GPIO_OUT events)"
     fi
     rm -f "$log"
 fi
