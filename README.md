@@ -20,13 +20,13 @@ Python is only used host-side, for a UF2 packer and the test harness.
 | M7        | XIP flash boot, OTP, BOOTRAM, glitch detector          | deferred |
 | M8        | example gallery + cycle-counting docs                  | deferred |
 
-**Tests:** **242 T1** (Unicorn) + **3 T2** (QEMU) all green — every
+**Tests:** **251 T1** (Unicorn) + **3 T2** (QEMU) all green — every
 public driver function has at least one register-trace assertion. T3
 (Renode) green where renode is installed, cleanly skips otherwise.
 
 | Tier | Coverage |
 | ---- | -------- |
-| T1   | 242 cases across 15 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio, trace) |
+| T1   | 251 cases across 16 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio, trace, sched) |
 | T2   | mps2-an505 sanity + ISA arithmetic + SysTick polled COUNTFLAG |
 | T3   | 10 .resc scripts: blinky, clocks, gpio, timer, pwm, dma, uart loopback, i2c eeprom, spi loopback, usb controller bring-up |
 
@@ -88,6 +88,7 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 | `docs/pio.md`        | PIO controller API + hand-encoding instructions        |
 | `docs/trace.md`      | CoreSight DWT + ITM + TPIU + ETM for T4 hardware debug |
 | `docs/benchmarking.md` | Benchmark suite + methodology for comparing against pico-sdk |
+| `docs/sched.md`      | NVIC-priority scheduler (QV-style) — 5-cycle `task_post`, 0 stack-per-task |
 
 **New here?** Read `docs/apps.md` first — it walks you through writing
 your first app top-to-bottom. Then `docs/calling.md` for the formal

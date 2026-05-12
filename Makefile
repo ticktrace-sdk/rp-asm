@@ -51,6 +51,11 @@ DRIVER_SRC += src/trng.S
 DRIVER_SRC += src/pio.S
 # --- Trace (CoreSight DWT/ITM/TPIU/ETM) for T4 hardware debugging.
 DRIVER_SRC += src/trace.S
+# --- Scheduler (NVIC-priority kernel, QV-style).
+DRIVER_SRC += src/sched.S
+# Scheduler depends on nvic.S helpers; sched-using examples must
+# `.include "src/nvic.S"` themselves (matches the pattern other examples
+# use for timer.S / systick.S etc).
 
 DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
 
