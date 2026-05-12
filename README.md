@@ -20,13 +20,13 @@ Python is only used host-side, for a UF2 packer and the test harness.
 | M7        | XIP flash boot, OTP, BOOTRAM, glitch detector          | deferred |
 | M8        | example gallery + cycle-counting docs                  | deferred |
 
-**Tests:** **229 T1** (Unicorn) + **3 T2** (QEMU) all green — every
+**Tests:** **242 T1** (Unicorn) + **3 T2** (QEMU) all green — every
 public driver function has at least one register-trace assertion. T3
 (Renode) green where renode is installed, cleanly skips otherwise.
 
 | Tier | Coverage |
 | ---- | -------- |
-| T1   | 229 cases across 14 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio) |
+| T1   | 242 cases across 15 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio, trace) |
 | T2   | mps2-an505 sanity + ISA arithmetic + SysTick polled COUNTFLAG |
 | T3   | 10 .resc scripts: blinky, clocks, gpio, timer, pwm, dma, uart loopback, i2c eeprom, spi loopback, usb controller bring-up |
 
@@ -84,6 +84,7 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 | `docs/adc.md`        | 8-channel ADC + temp sensor + DMA capture              |
 | `docs/trng.md`       | TRNG bring-up + EHR drain                              |
 | `docs/pio.md`        | PIO controller API + hand-encoding instructions        |
+| `docs/trace.md`      | CoreSight DWT + ITM + TPIU + ETM for T4 hardware debug |
 
 **New here?** Read `docs/apps.md` first — it walks you through writing
 your first app top-to-bottom. Then `docs/calling.md` for the formal
@@ -124,4 +125,7 @@ the relevant `build/*.uf2`, watch the serial console / logic analyser.
 - [ ] M8: example gallery — Larson scanner via PIO+DMA, USB CDC echo with
   hardware loopback, dual-core ping-pong
 - [ ] `tools/pioasm.py` (deferred from M5-I)
-- [ ] Cycle-counting helpers via DWT
+- [x] Cycle-counting + on-chip printf via DWT/ITM/TPIU/ETM (`src/trace.S`)
+- [ ] Pin a verified GPIO funcsel for SWO routing on Pico 2 silicon
+- [ ] ETM address-range filtering (`etm_init_with_range`)
+- [ ] DWT data watchpoints (`dwt_set_watchpoint`)

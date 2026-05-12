@@ -49,6 +49,8 @@ DRIVER_SRC += src/adc.S
 DRIVER_SRC += src/trng.S
 # --- M5-I (PIO) additive append - controller side.  pioasm deferred.
 DRIVER_SRC += src/pio.S
+# --- Trace (CoreSight DWT/ITM/TPIU/ETM) for T4 hardware debugging.
+DRIVER_SRC += src/trace.S
 
 DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
 
