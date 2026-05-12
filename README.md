@@ -41,6 +41,8 @@ sudo apt install binutils-arm-none-eabi python3
 make            # build/blinky.uf2 + every examples/*.S
 make test       # T1 + T2
 make test-all   # + T3 (Renode)
+make bench      # build/bench_*.uf2 (the comparison suite vs pico-sdk)
+make bench-sizes # print image-size table (no flash needed)
 ```
 
 ## Flash
@@ -85,6 +87,7 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 | `docs/trng.md`       | TRNG bring-up + EHR drain                              |
 | `docs/pio.md`        | PIO controller API + hand-encoding instructions        |
 | `docs/trace.md`      | CoreSight DWT + ITM + TPIU + ETM for T4 hardware debug |
+| `docs/benchmarking.md` | Benchmark suite + methodology for comparing against pico-sdk |
 
 **New here?** Read `docs/apps.md` first — it walks you through writing
 your first app top-to-bottom. Then `docs/calling.md` for the formal
