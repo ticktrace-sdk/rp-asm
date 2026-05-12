@@ -18,6 +18,9 @@
 #                  and M2 banners)
 #   clocks.resc  - M2 clocks demo in build/clocks_demo.elf
 #                  ASSERT: UART contains "150 MHz", >= 1 LED toggle
+#   pwm.resc     - M3-D PWM fade demo in build/pwm_fade_demo.elf
+#                  ASSERT: peripheral logged a "PWM slice 7 enabled" event
+#                          AND >= 10 PWM_CC_WRITE events (proves animation)
 # =============================================================================
 
 set -u
@@ -38,6 +41,10 @@ fi
 if [ ! -f "$repo/build/clocks_demo.elf" ]; then
     echo "INFO: build/clocks_demo.elf missing - building..."
     make -C "$repo" build/clocks_demo.uf2 >/dev/null
+fi
+if [ ! -f "$repo/build/pwm_fade_demo.elf" ]; then
+    echo "INFO: build/pwm_fade_demo.elf missing - building..."
+    make -C "$repo" build/pwm_fade_demo.uf2 >/dev/null
 fi
 
 cd "$repo"
@@ -100,6 +107,26 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
         overall=1
     else
         echo "PASS: clocks.resc (banner OK, $toggles LED toggles)"
+    fi
+    rm -f "$log"
+fi
+
+# ---- 3. pwm.resc - M3-D PWM fade demo ---------------------------------------
+log="$(run_one "tests/renode/pwm.resc")" || { overall=1; }
+if [ -n "${log:-}" ] && [ -f "$log" ]; then
+    echo "----- pwm.resc log (last 40 lines) -----"
+    tail -40 "$log"
+    echo "----------------------------------------"
+    if ! grep -q "PWM slice 7 enabled" "$log"; then
+        echo "FAIL: pwm.resc - slice 7 was never enabled"
+        overall=1
+    fi
+    cc_writes="$(grep -c 'PWM_CC_WRITE' "$log" || true)"
+    if [ "$cc_writes" -lt 10 ]; then
+        echo "FAIL: pwm.resc - only $cc_writes CC writes (want >=10 for fade animation)"
+        overall=1
+    else
+        echo "PASS: pwm.resc (slice enabled, $cc_writes CC writes observed)"
     fi
     rm -f "$log"
 fi
