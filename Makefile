@@ -38,6 +38,8 @@ DRIVER_SRC := \
 DRIVER_SRC += src/dma.S
 # --- M4-F (I2C) additive append - DesignWare DW_apb_i2c, both instances.
 DRIVER_SRC += src/i2c.S
+# --- M4-G (SPI) additive append - PL022, both instances.
+DRIVER_SRC += src/spi.S
 
 DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
 

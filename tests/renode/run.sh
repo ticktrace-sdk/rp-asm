@@ -217,10 +217,6 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
     echo "----- uart.resc log (last 40 lines) -----"
     tail -40 "$log"
     echo "------------------------------------------"
-    # The demo emits "uart-loopback OK" on UART0 if and only if both
-    # ping/pong round-trips succeeded.  The cross-wiring in uart.resc
-    # routes UART0_TX -> UART1_RX and back, so the bytes must traverse
-    # both the PL011 model AND the connector.
     if ! grep -q "uart-loopback OK" "$log"; then
         echo "FAIL: uart.resc - missing 'uart-loopback OK' on UART0 (loopback failed)"
         overall=1
@@ -232,7 +228,7 @@ fi
 # ===== END UART =====
 
 # ===== I2C (M4-F) =====
-# ---- 7. i2c.resc - M4-F I2C EEPROM demo (skip if elf missing) ---------------
+# ---- 8. i2c.resc - M4-F I2C EEPROM demo (skip if elf missing) ---------------
 if [ ! -f "$repo/build/i2c_eeprom_demo.elf" ]; then
     echo "INFO: build/i2c_eeprom_demo.elf missing - building..."
     make -C "$repo" build/i2c_eeprom_demo.uf2 >/dev/null
@@ -258,6 +254,31 @@ else
     echo "SKIP: i2c.resc - build/i2c_eeprom_demo.elf missing"
 fi
 # ===== END I2C =====
+
+# ===== SPI (M4-G) =====
+# ---- 9. spi.resc - M4-G SPI loopback demo (skip if elf missing) ------------
+if [ ! -f "$repo/build/spi_loopback_demo.elf" ]; then
+    echo "INFO: build/spi_loopback_demo.elf missing - building..."
+    make -C "$repo" build/spi_loopback_demo.uf2 >/dev/null
+fi
+if [ -f "$repo/build/spi_loopback_demo.elf" ]; then
+    log="$(run_one "tests/renode/spi.resc")" || { overall=1; }
+    if [ -n "${log:-}" ] && [ -f "$log" ]; then
+        echo "----- spi.resc log (last 30 lines) -----"
+        tail -30 "$log"
+        echo "-----------------------------------------"
+        if ! grep -q "PASS" "$log"; then
+            echo "FAIL: spi.resc - UART missing 'PASS' (loopback verify failed)"
+            overall=1
+        else
+            echo "PASS: spi.resc (PL022 LBM end-to-end OK)"
+        fi
+        rm -f "$log"
+    fi
+else
+    echo "SKIP: spi.resc - build/spi_loopback_demo.elf missing"
+fi
+# ===== END SPI =====
 
 if [ $overall -ne 0 ]; then
     exit 1
