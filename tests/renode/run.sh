@@ -205,6 +205,34 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
 fi
 # ===== END GPIO =====
 
+# ===== I2C (M4-F) =====
+# ---- 7. i2c.resc - M4-F I2C EEPROM demo (skip if elf missing) ---------------
+if [ ! -f "$repo/build/i2c_eeprom_demo.elf" ]; then
+    echo "INFO: build/i2c_eeprom_demo.elf missing - building..."
+    make -C "$repo" build/i2c_eeprom_demo.uf2 >/dev/null
+fi
+if [ -f "$repo/build/i2c_eeprom_demo.elf" ]; then
+    log="$(run_one "tests/renode/i2c.resc")" || { overall=1; }
+    if [ -n "${log:-}" ] && [ -f "$log" ]; then
+        echo "----- i2c.resc log (last 30 lines) -----"
+        tail -30 "$log"
+        echo "-----------------------------------------"
+        if ! grep -q "EEPROM" "$log"; then
+            echo "FAIL: i2c.resc - UART missing 'EEPROM' banner"
+            overall=1
+        elif ! grep -qi "READ:" "$log"; then
+            echo "FAIL: i2c.resc - UART missing 'READ:' line (no read-back)"
+            overall=1
+        else
+            echo "PASS: i2c.resc (EEPROM banner + READ-back line OK)"
+        fi
+        rm -f "$log"
+    fi
+else
+    echo "SKIP: i2c.resc - build/i2c_eeprom_demo.elf missing"
+fi
+# ===== END I2C =====
+
 if [ $overall -ne 0 ]; then
     exit 1
 fi

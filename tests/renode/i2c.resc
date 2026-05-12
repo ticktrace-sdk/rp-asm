@@ -1,0 +1,29 @@
+:name: rp-asm M4-F I2C EEPROM demo
+:description: Loads build/i2c_eeprom_demo.elf, runs ~100 ms simulated, and
+:             dumps UART0.  Asserts (via tests/renode/run.sh) that the
+:             firmware printed the EEPROM read-back banner.
+
+# ------------------------------------------------------------------- Setup
+$bin?=@build/i2c_eeprom_demo.elf
+
+mach create "rp2350"
+machine LoadPlatformDescription @tests/renode/rp2350.repl
+
+showAnalyzer uart0
+
+# ------------------------------------------------------------------- Image
+sysbus LoadELF $bin
+
+cpu0 VectorTableOffset 0x20000000
+
+# ----------------------------------------------------------- Bus monitor
+# Tally GPIO25 toggles at 0xD0000028 (SIO_GPIO_OUT_XOR).
+sysbus AddWatchpointHook 0xd0000028 4 Write "cpu.InfoLog('LED_TOGGLE @ 0x{0:X} = 0x{1:X}'.format(address, value))"
+
+# ----------------------------------------------------------- Run + dump
+emulation RunFor "00:00:00.500"
+
+echo "----- UART0 dump -----"
+uart0 DumpHistoryBuffer
+
+echo "----- Done -----"

@@ -589,3 +589,173 @@ elif request.IsWrite:
         pass
 '''
 // ===== END DMA =============================================================
+
+// ===== I2C (M4-F) ==========================================================
+// Two DesignWare DW_apb_i2c instances (RP2350 has both like the RP2040).
+// Functional model: tracks IC_TAR / IC_DATA_CMD writes; for known target
+// addresses (0x50 EEPROM stub, 0x42 loopback echo) synthesises read-back
+// bytes.  STATUS always reports TFNF | TFE | (RFNE if rx queue non-empty).
+// See tests/renode/i2c_peripheral.py for the canonical (non-inlined) copy
+// of this script - keep both in sync.
+i2c0: Python.PythonPeripheral @ sysbus 0x40090000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    state = {
+        "tar": 0, "sar": 0, "con": 0, "enable": 0,
+        "intr_mask": 0, "raw_intr_stat": 0,
+        "fs_spklen": 0, "sda_hold": 0,
+        "rx_queue": [],
+        "tx_log_per_addr": {},
+        "eeprom_pattern": [0xA5, 0xB6, 0xC7, 0xD8],
+        "eeprom_idx": 0,
+    }
+elif request.IsRead:
+    off = request.Offset & 0xFFF
+    if off == 0x00:
+        request.Value = state["con"]
+    elif off == 0x04:
+        request.Value = state["tar"]
+    elif off == 0x08:
+        request.Value = state["sar"]
+    elif off == 0x10:
+        if state["rx_queue"]:
+            request.Value = state["rx_queue"].pop(0) & 0xFF
+        else:
+            request.Value = 0xFF
+    elif off == 0x2C:
+        request.Value = state["raw_intr_stat"] & state["intr_mask"]
+    elif off == 0x30:
+        request.Value = state["intr_mask"]
+    elif off == 0x34:
+        request.Value = state["raw_intr_stat"]
+    elif off == 0x40:
+        state["raw_intr_stat"] = 0
+        request.Value = 0
+    elif off == 0x6C:
+        request.Value = state["enable"]
+    elif off == 0x70:
+        s = (1 << 1) | (1 << 2)
+        if state["rx_queue"]:
+            s |= (1 << 3)
+        request.Value = s
+    elif off == 0x78:
+        request.Value = len(state["rx_queue"])
+    elif off == 0x80:
+        request.Value = 0
+    elif off == 0x9C:
+        request.Value = state["enable"]
+    else:
+        request.Value = 0
+elif request.IsWrite:
+    off = request.Offset & 0xFFF
+    val = request.Value & 0xFFFFFFFF
+    if off == 0x00:
+        state["con"] = val
+    elif off == 0x04:
+        state["tar"] = val & 0x3FF
+    elif off == 0x08:
+        state["sar"] = val & 0x3FF
+    elif off == 0x10:
+        cmd_read = bool(val & (1 << 8))
+        addr = state["tar"]
+        if cmd_read:
+            if addr == 0x50:
+                idx = state["eeprom_idx"]
+                pat = state["eeprom_pattern"]
+                state["rx_queue"].append(pat[idx % len(pat)])
+                state["eeprom_idx"] = idx + 1
+            elif addr == 0x42:
+                log = state["tx_log_per_addr"].get(addr, [])
+                state["rx_queue"].append(log[-1] if log else 0)
+            else:
+                state["rx_queue"].append(0xFF)
+        else:
+            state["tx_log_per_addr"].setdefault(addr, []).append(val & 0xFF)
+    elif off == 0x30:
+        state["intr_mask"] = val
+    elif off == 0x6C:
+        state["enable"] = val & 1
+    elif off == 0x7C:
+        state["sda_hold"] = val
+    elif off == 0xA0:
+        state["fs_spklen"] = val
+'''
+
+i2c1: Python.PythonPeripheral @ sysbus 0x40098000
+    size: 0x4000
+    initable: true
+    script: '''
+if request.IsInit:
+    state = {
+        "tar": 0, "sar": 0, "con": 0, "enable": 0,
+        "intr_mask": 0, "raw_intr_stat": 0,
+        "fs_spklen": 0, "sda_hold": 0,
+        "rx_queue": [],
+        "tx_log_per_addr": {},
+    }
+elif request.IsRead:
+    off = request.Offset & 0xFFF
+    if off == 0x00:
+        request.Value = state["con"]
+    elif off == 0x04:
+        request.Value = state["tar"]
+    elif off == 0x08:
+        request.Value = state["sar"]
+    elif off == 0x10:
+        if state["rx_queue"]:
+            request.Value = state["rx_queue"].pop(0) & 0xFF
+        else:
+            request.Value = 0xFF
+    elif off == 0x2C:
+        request.Value = state["raw_intr_stat"] & state["intr_mask"]
+    elif off == 0x30:
+        request.Value = state["intr_mask"]
+    elif off == 0x34:
+        request.Value = state["raw_intr_stat"]
+    elif off == 0x40:
+        state["raw_intr_stat"] = 0
+        request.Value = 0
+    elif off == 0x6C:
+        request.Value = state["enable"]
+    elif off == 0x70:
+        s = (1 << 1) | (1 << 2)
+        if state["rx_queue"]:
+            s |= (1 << 3)
+        request.Value = s
+    elif off == 0x78:
+        request.Value = len(state["rx_queue"])
+    elif off == 0x80:
+        request.Value = 0
+    elif off == 0x9C:
+        request.Value = state["enable"]
+    else:
+        request.Value = 0
+elif request.IsWrite:
+    off = request.Offset & 0xFFF
+    val = request.Value & 0xFFFFFFFF
+    if off == 0x00:
+        state["con"] = val
+    elif off == 0x04:
+        state["tar"] = val & 0x3FF
+    elif off == 0x08:
+        state["sar"] = val & 0x3FF
+    elif off == 0x10:
+        cmd_read = bool(val & (1 << 8))
+        addr = state["tar"]
+        if cmd_read:
+            log = state["tx_log_per_addr"].get(addr, [])
+            state["rx_queue"].append(log[-1] if log else 0)
+        else:
+            state["tx_log_per_addr"].setdefault(addr, []).append(val & 0xFF)
+    elif off == 0x30:
+        state["intr_mask"] = val
+    elif off == 0x6C:
+        state["enable"] = val & 1
+    elif off == 0x7C:
+        state["sda_hold"] = val
+    elif off == 0xA0:
+        state["fs_spklen"] = val
+'''
+// ===== END I2C =============================================================

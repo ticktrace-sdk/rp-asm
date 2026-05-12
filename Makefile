@@ -36,6 +36,8 @@ DRIVER_SRC := \
 # --- M3-C (DMA) additive append - keep on its own line so orchestrator can
 #     merge sibling milestone agents (timer, gpio/pads, pwm) without conflict.
 DRIVER_SRC += src/dma.S
+# --- M4-F (I2C) additive append - DesignWare DW_apb_i2c, both instances.
+DRIVER_SRC += src/i2c.S
 
 DRIVER_OBJ := $(patsubst src/%.S, build/%.o, $(DRIVER_SRC))
 
