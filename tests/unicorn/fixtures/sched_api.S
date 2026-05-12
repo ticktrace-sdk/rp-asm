@@ -30,9 +30,12 @@ _sched_keepalive:
     .word sched_init
     .word task_create
     .word task_post
+    .word task_post_n
     .word task_clear
     .word sched_run
     .word critical_enter
     .word critical_exit
+    .word critical_enter_basepri
+    .word critical_exit_basepri
     .word nvic_enable_irq
     .word nvic_install_handler

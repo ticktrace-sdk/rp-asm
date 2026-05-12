@@ -212,6 +212,48 @@ def test_task_clear_writes_icpr(fixture_elf):
 # ---------------------------------------------------------------- critical
 
 
+# ---------------------------------------------------------------- task_post_n
+
+
+def test_task_post_n_posts_multiple_tasks_in_one_store(fixture_elf):
+    """task_post_n(0x05) = post tasks 0 and 2 in one STR.
+    SCHED_BASE_IRQ=48 means bits 16 and 18 of NVIC_ISPR1."""
+    sim = _load(fixture_elf)
+    _call(sim, "task_post_n", 0x05)
+    ispr_addr = NVIC_ISPR_BASE + 4
+    w = _writes_at(sim, ispr_addr)
+    assert len(w) == 1, f"task_post_n must be a single store, got: {w}"
+    expected = (1 << 16) | (1 << 18)
+    assert w[-1].value == expected, \
+        f"task_post_n(0x05): expected ISPR1 = {expected:#x}, got {w[-1].value:#x}"
+
+
+def test_task_post_n_clamps_to_max_tasks(fixture_elf):
+    """Bits beyond MAX_TASKS (id >= 8) must be ignored; the implementation
+    AND-masks before shifting."""
+    sim = _load(fixture_elf)
+    _call(sim, "task_post_n", 0xFFFFFFFF)
+    ispr_addr = NVIC_ISPR_BASE + 4
+    w = _writes_at(sim, ispr_addr)
+    # All 8 tasks: bits 16..23
+    assert w and w[-1].value == 0x00FF0000, \
+        f"task_post_n(all): expected 0x00FF0000, got {w[-1].value:#x}"
+
+
+# ---------------------------------------------------------------- BASEPRI
+
+
+def test_critical_enter_basepri_round_trip(fixture_elf):
+    """enter returns previous BASEPRI (0 at boot); exit restores."""
+    sim = _load(fixture_elf)
+    _call(sim, "critical_enter_basepri", 0x40)
+    assert sim.uc.reg_read(UC_ARM_REG_R0) == 0, \
+        f"enter_basepri(0x40) returned {sim.uc.reg_read(UC_ARM_REG_R0):#x}, expected 0"
+
+    _call(sim, "critical_exit_basepri", 0)
+    # No trap == pass; BASEPRI not exposed through Unicorn's standard regs.
+
+
 def test_critical_enter_exit_round_trips_primask(fixture_elf):
     """critical_enter returns the previous PRIMASK; critical_exit restores it."""
     sim = _load(fixture_elf)

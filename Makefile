@@ -53,6 +53,8 @@ DRIVER_SRC += src/pio.S
 DRIVER_SRC += src/trace.S
 # --- Scheduler (NVIC-priority kernel, QV-style).
 DRIVER_SRC += src/sched.S
+# --- SPSC byte queue (lock-free ISR -> task data path).
+DRIVER_SRC += src/spsc.S
 # Scheduler depends on nvic.S helpers; sched-using examples must
 # `.include "src/nvic.S"` themselves (matches the pattern other examples
 # use for timer.S / systick.S etc).

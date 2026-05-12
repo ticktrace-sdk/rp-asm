@@ -123,6 +123,28 @@ task_post:
     bx      lr
 
 @ ----------------------------------------------------------------------------
+@ task_post_n(mask)
+@   r0 = bitmask of task ids (bit i = task i).  Posts all set bits in one
+@   STR to NVIC_ISPR.  Requires every task slot to live in the same NVIC
+@   bank — true when MAX_TASKS=8 and SCHED_BASE_IRQ=48 (bits 16..23 of
+@   bank 1).  6 cycles total.
+@
+@   Example: task_post_n(0x05) posts tasks 0 and 2.
+@ ----------------------------------------------------------------------------
+    .equ _SCHED_ISPR_BANK,   (SCHED_BASE_IRQ / 32)
+    .equ _SCHED_ISPR_SHIFT,  (SCHED_BASE_IRQ % 32)
+
+    .section .text.task_post_n, "ax"
+    .thumb_func
+    .global  task_post_n
+task_post_n:
+    and     r0, r0, #((1 << MAX_TASKS) - 1)
+    lsls    r0, #_SCHED_ISPR_SHIFT
+    ldr     r1, =NVIC_ISPR_BASE + (_SCHED_ISPR_BANK * 4)
+    str     r0, [r1]
+    bx      lr
+
+@ ----------------------------------------------------------------------------
 @ task_clear(id) - cancel a pending post before the task runs.
 @   No-op if the task is already running or not pending.
 @ ----------------------------------------------------------------------------
@@ -174,4 +196,44 @@ critical_enter:
     .global  critical_exit
 critical_exit:
     msr     PRIMASK, r0
+    bx      lr
+
+@ ----------------------------------------------------------------------------
+@ critical_enter_basepri(prio) -> r0 = previous BASEPRI
+@   r0 = priority threshold (same encoding as task_create's prio arg).
+@   Masks IRQs at or below this priority while allowing strictly-higher
+@   priorities through.  Use this instead of critical_enter when you want
+@   the top-priority task to keep preempting.
+@
+@   Example:
+@     critical_enter_basepri(0x40)  --> tasks at 0x40, 0x80, 0xC0 masked;
+@                                       tasks at 0x00 still preempt.
+@
+@   Cortex-M33 BASEPRI semantics (ARMv8-M §B3.4.10):
+@     - BASEPRI = 0 disables masking (default).
+@     - BASEPRI = N (N != 0) masks exceptions with priority value >= N.
+@     - Only the top NVIC_PRIO_BITS of the byte are implemented; lower
+@       bits read as zero.
+@
+@   3 cycles.
+@ ----------------------------------------------------------------------------
+    .section .text.critical_enter_basepri, "ax"
+    .thumb_func
+    .global  critical_enter_basepri
+critical_enter_basepri:
+    mrs     r1, BASEPRI
+    msr     BASEPRI, r0
+    mov     r0, r1
+    bx      lr
+
+@ ----------------------------------------------------------------------------
+@ critical_exit_basepri(saved)
+@   r0 = the value returned by critical_enter_basepri.  Restores.
+@   2 cycles.
+@ ----------------------------------------------------------------------------
+    .section .text.critical_exit_basepri, "ax"
+    .thumb_func
+    .global  critical_exit_basepri
+critical_exit_basepri:
+    msr     BASEPRI, r0
     bx      lr
