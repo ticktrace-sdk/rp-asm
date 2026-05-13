@@ -8,22 +8,30 @@ selection is a tradeoff between fidelity and speed.
 | T1   | Unicorn (Python)     | ~10 ms    | MMIO write order, register values, opcode encoding             |
 | T2   | qemu-system-arm      | ~200 ms   | full ARMv8-M ISA, exception flow, semihosting                  |
 | T3   | Renode               | ~1-5 s    | end-to-end firmware on a synthetic RP2350 platform             |
-| T4   | real hardware (Pico 2)| seconds  | clock domain, USB, electrical (manual; **not yet wired in CI**)|
+| T4   | real hardware (Pico 2)| seconds  | clock domain, USB enumeration, electrical (manual; **not yet wired in CI**) |
 
 T1+T2 run on every push (`make test`). T3 runs nightly or on demand via
-the GitHub Actions workflow. T4 stays manual until M5+.
+the GitHub Actions workflow. T4 is manual: drag `build/<name>_flash.uf2`
+onto BOOTSEL. Real-silicon-only failure modes the lower tiers cannot
+catch -- post-bootrom MSPLIM, RCP coprocessor state, RP2350-A2 USB
+errata, `clk_peri`-gated `RESET_DONE` -- are documented in
+[`docs/boot.md`](../docs/boot.md) and
+[`docs/usb.md`](../docs/usb.md).
 
 ## Quick start
 
 ```bash
-sudo apt install binutils-arm-none-eabi qemu-system-arm python3-pip
-pip3 install --break-system-packages unicorn pyelftools pytest
-
-make           # build the firmware
+sudo apt install binutils-arm-none-eabi qemu-system-arm python3-venv
+make pydeps    # one-shot: create .venv + install unicorn/pyelftools/pytest
+make           # build the firmware (SRAM-resident, used by T1)
 make test      # T1 + T2 (fast tier)
 make test-t3   # T3 (Renode - skips cleanly if not installed)
 make test-all  # everything
 ```
+
+`make pydeps` writes a project-local `.venv` and pins versions via
+`tests/unicorn/requirements.txt`.  `make test-*` prefers `.venv/bin/python`
+if present and falls back to system `python3`.
 
 The T3 install path lives in [tests/renode/README.md](renode/README.md).
 
@@ -77,7 +85,14 @@ What it gives you:
   the three common stop conditions.
 
 Limitations: no SysTick, no NVIC behaviour beyond basic exception entry;
-timing is instruction-count, not cycle-accurate.
+timing is instruction-count, not cycle-accurate.  The harness also
+**NOPs out a small set of M33-only instructions** at load time (`mrc /
+mcrr p7` for the RCP coprocessor, `msr msplim`) -- Unicorn doesn't
+model those, but they're required on real silicon and live in
+`_reset`'s prologue (see [`docs/boot.md`](../docs/boot.md)).  Tests
+should therefore consider the trace **after** the M33 prologue:
+`test_v01_blinky.py` filters PPB writes (`SCB_VTOR`, `SCB_CPACR`) so
+the first peripheral write asserted against is the `RESETS_RESET` clear.
 
 ### T2 - QEMU semihosting smoke
 
@@ -122,10 +137,19 @@ LED toggles.
 
 ### T4 - real hardware
 
-Not in CI yet. Plan: a USB-attached Pico 2 with a UART loopback wired
-to the host; a host script flashes via UF2 mass-storage, opens the
-serial port, and asserts on the same banner + tick output. Wiring this
-in will land alongside M5 (USB + bootrom helpers).
+Manual.  Use the flash-resident UF2 variants (see
+[`docs/boot.md`](../docs/boot.md) -- SRAM-resident does not run
+reliably on RP2350-A2 silicon):
+
+```
+make build/blinky_flash.uf2            # 150 MHz blinky + UART banner
+make build/diag_flash.uf2              # stage-blinker for bisecting boot hangs
+make build/usb_cdc_echo_demo_flash.uf2 # CDC echo on /dev/ttyACM0
+```
+
+Hold BOOTSEL while plugging the Pico 2 in, drag the `.uf2` to the
+mounted drive, observe.  Wiring this into CI needs a USB-attached host
+plus a UART loopback; the v0.2 milestone is the right time.
 
 ## Adding a new test
 
