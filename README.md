@@ -47,11 +47,11 @@ lower tiers (T1/T2/T3) cover it.
 | `gpio.S`      | ✅ Direct      | `blinky_flash` — GP25 LED toggle observed                           |
 | `uart.S`      | ✅ Direct      | `blinky_flash` — banner @ 115200 8N1 on UART0 TX                    |
 | `usb.S`       | ✅ Direct      | `usb_cdc_echo_demo_flash` — full enumeration + bidirectional CDC echo |
-| `nvic.S`      | 🟡 Indirect    | `usb_cdc_echo_demo_flash` — install + enable USBCTRL_IRQ → vectors to ISR |
-| `tick.S`      | 🟡 Indirect    | `blinky_flash` calls `tick_init` but no tick-consumer verified yet  |
+| `timer.S`     | ✅ Direct      | `timer_usb_demo_flash` — TIMER0 ALARM0 IRQ fires at 1 MHz/500000-us cadence; ISR re-arms; ISR also reports via USB CDC |
+| `tick.S`      | ✅ Direct      | `timer_usb_demo_flash` — `t=` increments by 500000 per 500 ms, confirming the 1 MHz tick rate set up by `tick_init` |
+| `nvic.S`      | ✅ Direct      | `timer_usb_demo_flash` (line 0) + `usb_cdc_echo_demo_flash` (line 14) — install + enable for two different IRQ lines, both vector to their handlers |
 | `watchdog.S`  | 🟡 Indirect    | `blinky_flash` calls `watchdog_disable`; kick / timeout paths untested |
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
-| `timer.S`     | ❌ Not yet     | T1/T3 only                                                          |
 | `systick.S`   | ❌ Not yet     | T1/T2 only                                                          |
 | `dma.S`       | ❌ Not yet     | T1/T3 only                                                          |
 | `pwm.S`       | ❌ Not yet     | T1/T3 only                                                          |
