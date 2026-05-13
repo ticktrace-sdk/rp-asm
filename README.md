@@ -50,9 +50,9 @@ lower tiers (T1/T2/T3) cover it.
 | `timer.S`     | ✅ Direct      | `timer_usb_demo_flash` — TIMER0 ALARM0 IRQ fires at 1 MHz/500000-us cadence; ISR re-arms; ISR also reports via USB CDC |
 | `tick.S`      | ✅ Direct      | `timer_usb_demo_flash` — `t=` increments by 500000 per 500 ms, confirming the 1 MHz tick rate set up by `tick_init` |
 | `nvic.S`      | ✅ Direct      | `timer_usb_demo_flash` (line 0) + `usb_cdc_echo_demo_flash` (line 14) — install + enable for two different IRQ lines, both vector to their handlers |
+| `systick.S`   | ✅ Direct      | `systick_usb_demo_flash` — 100 ms SysTick @ proc clock, vec[15] patch, ISR fires at 5× the main-loop heartbeat rate as expected |
 | `watchdog.S`  | 🟡 Indirect    | `blinky_flash` calls `watchdog_disable`; kick / timeout paths untested |
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
-| `systick.S`   | ❌ Not yet     | T1/T2 only                                                          |
 | `dma.S`       | ❌ Not yet     | T1/T3 only                                                          |
 | `pwm.S`       | ❌ Not yet     | T1/T3 only                                                          |
 | `i2c.S`       | ❌ Not yet     | T1/T3 only                                                          |
