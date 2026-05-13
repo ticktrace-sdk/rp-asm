@@ -30,8 +30,8 @@ RESETS_RESET_CLR = RESETS_BASE + 0x3000
 CSR_START = 1 << 0
 CSR_WDATA_READY = 1 << 1
 CSR_SUM_VLD = 1 << 2
-CSR_BSWAP = 1 << 6
-CSR_DMA_SIZE_WORD = 2 << 3
+CSR_BSWAP = 1 << 12
+CSR_DMA_SIZE_WORD = 2 << 8
 
 
 @pytest.fixture(scope="module")

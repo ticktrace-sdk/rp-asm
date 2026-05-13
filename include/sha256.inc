@@ -21,14 +21,14 @@
     .equ SHA256_SUM6,         0x20
     .equ SHA256_SUM7,         0x24
 
-    @ CSR bits
+    @ CSR bits (RP2350 datasheet sec 12.13)
     .equ SHA256_CSR_START,                (1 << 0)
     .equ SHA256_CSR_WDATA_READY,          (1 << 1)
     .equ SHA256_CSR_SUM_VLD,              (1 << 2)
-    .equ SHA256_CSR_DMA_SIZE_SHIFT,       3      @ bits [4:3]: 0=byte, 1=half, 2=word
-    .equ SHA256_CSR_DMA_SIZE_WORD,        (2 << 3)
-    .equ SHA256_CSR_ERR_WDATA_NOT_RDY,    (1 << 5)
-    .equ SHA256_CSR_BSWAP,                (1 << 6)
+    .equ SHA256_CSR_ERR_WDATA_NOT_RDY,    (1 << 4)
+    .equ SHA256_CSR_DMA_SIZE_SHIFT,       8       @ bits [9:8]: 0=byte, 1=half, 2=word
+    .equ SHA256_CSR_DMA_SIZE_WORD,        (2 << 8)
+    .equ SHA256_CSR_BSWAP,                (1 << 12)
 
     .equ SHA256_BLOCK_BYTES,  64
     .equ SHA256_BLOCK_WORDS,  16
