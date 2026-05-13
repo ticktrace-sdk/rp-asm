@@ -88,6 +88,7 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 | `docs/clocks.md`     | XOSC/PLL bring-up, clock tree, baud-recomputation hook |
 | `docs/gpio.md`       | 48-pin GPIO + PADS, IRQ programming, ISO/OD erratum    |
 | `docs/timer.md`      | TIMER0/1, SysTick, NVIC plumbing                       |
+| `docs/nvic.md`       | NVIC helpers — enable / install / pending / priority   |
 | `docs/dma.md`        | 16-channel DMA, sniffer, IRQ aggregators               |
 | `docs/pwm.md`        | 12-slice PWM, freq/duty math, servo cookbook           |
 | `docs/uart.md`       | PL011, IRQ + DMA modes, modem flow                     |
