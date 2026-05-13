@@ -67,13 +67,26 @@ _vectors:
 @ ----------------------------------------------------------------------------
     .equ IMG_FLAGS, 0x1021
 
+@ Version metadata.  Anyone consuming this image (picotool info, an
+@ over-the-air updater, an A/B boot stub) can read these bytes and
+@ make decisions about compatibility.  Bump as the SDK ships
+@ user-facing API or boot-contract changes.
+    .equ IMG_VERSION_MAJOR, 0
+    .equ IMG_VERSION_MINOR, 1
+
     .section .image_def, "a"
     .align   2
     .global  _image_def
 _image_def:
     .word 0xffffded3                                @ PICOBIN_BLOCK_MARKER_START
     .word 0x42 | (1 << 8) | (IMG_FLAGS << 16)       @ IMAGE_TYPE item, 1 word
-    .word 0xff | (1 << 8)                           @ LAST_ITEM, 1 word
+    @ VERSION item (picobin type 0x48), 2 words.  Canonical encoding:
+    @   word 1: byte0=0x48 (type), byte1=0x02 (size in words), bytes 2-3 =
+    @           rolling counter (unused, 0)
+    @   word 2: bytes 0-1 = minor, bytes 2-3 = major
+    .word 0x48 | (2 << 8)
+    .word IMG_VERSION_MINOR | (IMG_VERSION_MAJOR << 16)
+    .word 0xff | (3 << 8)                           @ LAST_ITEM, 3 content words
     .word 0                                         @ next_block_offset = 0 (loop)
     .word 0xab123579                                @ PICOBIN_BLOCK_MARKER_END
 
