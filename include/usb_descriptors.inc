@@ -81,8 +81,8 @@
 @   VID 0x2E8A is Raspberry Pi; PID 0x000A is the unallocated test PID we
 @   use across all rp-asm CDC examples.  Hosts will see a unique enumeration
 @   based on these.
-    .equ USB_VID,                     0x2E8A
-    .equ USB_PID,                     0x000A
+    .equ USB_VID,                     0x2E8A     @ Raspberry Pi (Trading) Ltd
+    .equ USB_PID,                     0x10EE     @ Amken's allotted PID
     .equ USB_BCD_DEVICE,              0x0001
 
 @ ---- Descriptor sizes (used in headers + total config length) --------------

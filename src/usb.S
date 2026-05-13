@@ -101,8 +101,20 @@
 usb_pending_address:    .word 0
     .global  usb_configured
 usb_configured:         .word 0
+    @ USB has independent PID toggles per (endpoint, direction).  EP0 IN and
+    @ EP0 OUT each get their own shadow.
     .global  usb_ep0_pid
-usb_ep0_pid:            .word 0
+usb_ep0_pid:            .word 0     @ EP0 IN PID shadow
+    .global  usb_ep0_out_pid
+usb_ep0_out_pid:        .word 0     @ EP0 OUT PID shadow (STATUS ZLP, etc.)
+    @ Multi-packet IN state for EP0.  Set by _usb_ep0_start_tx; consumed
+    @ chunk-by-chunk in _usb_handle_buff_status when the previous IN packet
+    @ has completed.  Needed for any descriptor > 64 bytes (the full CDC
+    @ config descriptor is 67).
+    .global  usb_ep0_tx_src
+usb_ep0_tx_src:         .word 0
+    .global  usb_ep0_tx_remaining
+usb_ep0_tx_remaining:   .word 0
     .global  usb_ep1_in_pid
 usb_ep1_in_pid:         .word 0
     .global  usb_ep1_out_pid
@@ -338,10 +350,10 @@ usb_ep_receive_arm:
     push    {r4, lr}
     mov     r4, r1
 
-    @ Resolve PID shadow for this EP OUT
+    @ Resolve PID shadow for this EP OUT (independent from EP IN side).
     cmp     r0, #0
     bne     1f
-    ldr     r2, =usb_ep0_pid
+    ldr     r2, =usb_ep0_out_pid
     b       9f
 1:  ldr     r2, =usb_ep1_out_pid
 9:  ldrb    r3, [r2]
@@ -492,6 +504,8 @@ _usb_handle_bus_reset:
     strb    r1, [r0]
     ldr     r0, =usb_ep0_pid
     strb    r1, [r0]
+    ldr     r0, =usb_ep0_out_pid
+    strb    r1, [r0]
     ldr     r0, =usb_ep1_in_pid
     strb    r1, [r0]
     ldr     r0, =usb_ep1_out_pid
@@ -530,11 +544,13 @@ _usb_handle_bus_reset:
 _usb_handle_setup:
     push    {r4, r5, r6, r7, lr}
 
-    @ Reset EP0 IN PID shadow to DATA1 (per USB spec - first IN data of a
-    @ control transfer is DATA1).  We store 1 so that usb_ep_send picks
-    @ DATA1 then toggles to DATA0 for the second packet.
+    @ Reset EP0 PID shadows to DATA1 (per USB spec - first DATA stage packet
+    @ and the STATUS ZLP are both DATA1; we store 1 so usb_ep_send /
+    @ usb_ep_receive_arm pick DATA1 then toggle.  IN and OUT are independent.
     ldr     r0, =usb_ep0_pid
     movs    r1, #1
+    strb    r1, [r0]
+    ldr     r0, =usb_ep0_out_pid
     strb    r1, [r0]
 
     @ Read SETUP packet
@@ -691,14 +707,14 @@ _usb_send_descriptor:
     ldrb    r0, [r7, #7]                          @ entry.idx
     cmp     r0, r5
     bne     .Ldesc_skip
-    @ Match!
+    @ Match!  Send the descriptor, fragmenting into 64-byte EP0 IN packets
+    @ if necessary (config descriptor is 67 bytes on CDC-ACM).
     ldr     r1, [r7, #0]                          @ src ptr
     ldrh    r2, [r7, #4]                          @ desc len
     cmp     r2, r6
     it      hi
     movhi   r2, r6                                @ min(desclen, wLength)
-    movs    r0, #0                                @ EP0
-    bl      usb_ep_send
+    bl      _usb_ep0_start_tx
     @ Arm EP0 OUT for the host's status-stage ZLP
     movs    r0, #0
     movs    r1, #0
@@ -715,24 +731,107 @@ _usb_send_descriptor:
     pop     {r4, r5, r6, r7, pc}
 
 @ ----------------------------------------------------------------------------
+@ _usb_ep0_start_tx(src, total_len) - begin a multi-packet EP0 IN transfer.
+@   r1 = src
+@   r2 = total_len  (may be > 64; we fragment into 64-byte EP0 IN packets)
+@
+@ Saves (src + 64, total_len - first_chunk) into usb_ep0_tx_{src,remaining}
+@ for the BUFF_STATUS handler to pick up, then ships the first chunk.
+@ Clobbers r0-r3.
+@ ----------------------------------------------------------------------------
+    .section .text._usb_ep0_start_tx, "ax"
+    .thumb_func
+    .global  _usb_ep0_start_tx
+_usb_ep0_start_tx:
+    push    {r4, r5, lr}
+    mov     r4, r1                                @ src
+    mov     r5, r2                                @ total_len
+
+    @ chunk = min(total_len, 64)
+    movs    r3, #64
+    cmp     r5, r3
+    it      ls
+    movls   r3, r5
+
+    @ Save tail (src + chunk, remaining = total_len - chunk) for the next IRQ.
+    add     r1, r4, r3                            @ next src
+    subs    r2, r5, r3                            @ remaining
+    ldr     r0, =usb_ep0_tx_src
+    str     r1, [r0]
+    ldr     r0, =usb_ep0_tx_remaining
+    str     r2, [r0]
+
+    @ Ship the first chunk now.
+    movs    r0, #0                                @ EP0
+    mov     r1, r4                                @ src
+    mov     r2, r3                                @ len
+    bl      usb_ep_send
+    pop     {r4, r5, pc}
+
+@ ----------------------------------------------------------------------------
+@ _usb_ep0_tx_continue - ship the next chunk of a pending EP0 IN transfer.
+@ Called from _usb_handle_buff_status when EP0 IN completes and there are
+@ still bytes left in usb_ep0_tx_remaining.  Returns r0 = 1 if a chunk was
+@ sent (caller should NOT also try to apply pending SET_ADDRESS), 0 if no
+@ pending transfer.  Clobbers r0-r3.
+@ ----------------------------------------------------------------------------
+    .section .text._usb_ep0_tx_continue, "ax"
+    .thumb_func
+    .global  _usb_ep0_tx_continue
+_usb_ep0_tx_continue:
+    push    {r4, r5, lr}
+    ldr     r0, =usb_ep0_tx_remaining
+    ldr     r5, [r0]
+    cbz     r5, 9f                                @ nothing pending -> return 0
+    ldr     r0, =usb_ep0_tx_src
+    ldr     r4, [r0]                              @ src
+
+    @ chunk = min(remaining, 64)
+    movs    r3, #64
+    cmp     r5, r3
+    it      ls
+    movls   r3, r5
+
+    @ Advance state
+    add     r1, r4, r3
+    subs    r2, r5, r3
+    ldr     r0, =usb_ep0_tx_src
+    str     r1, [r0]
+    ldr     r0, =usb_ep0_tx_remaining
+    str     r2, [r0]
+
+    @ Send chunk
+    movs    r0, #0
+    mov     r1, r4
+    mov     r2, r3
+    bl      usb_ep_send
+    movs    r0, #1
+    pop     {r4, r5, pc}
+9:  movs    r0, #0
+    pop     {r4, r5, pc}
+
+@ ----------------------------------------------------------------------------
 @ _usb_setup_endpoints - configure ep_ctrl entries for EP1 OUT, EP1 IN, EP2 IN.
 @ Called after SET_CONFIGURATION 1.
 @ ----------------------------------------------------------------------------
     .section .text._usb_setup_endpoints, "ax"
     .thumb_func
 _usb_setup_endpoints:
+    @ Each EP needs INTERRUPT_PER_BUFF (bit 29) so the controller sets the
+    @ corresponding BUFF_STATUS bit on buffer completion and raises the USB
+    @ IRQ.  Without it the buffer transfers silently and the ISR never sees
+    @ EP1 OUT bytes arrive or EP1 IN packets complete.
     @ ep_ctrl[1].in   @ DPRAM + 0x008  (EP1 IN, bulk, 64 bytes)
     ldr     r0, =USBCTRL_DPRAM_BASE + USB_DPRAM_EP_CTRL_BASE
-    @ ENABLE | TYPE_BULK | INT_ON_NAK | buffer_offset
-    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_TYPE_BULK | USB_EP1_IN_BUF_OFFSET)
+    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_INTERRUPT_PER_BUF | USB_EPCTRL_TYPE_BULK | USB_EP1_IN_BUF_OFFSET)
     str     r1, [r0, #0]                          @ ep_ctrl[1].in
 
     @ ep_ctrl[1].out  @ DPRAM + 0x00C  (EP1 OUT, bulk, 64 bytes)
-    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_TYPE_BULK | USB_EP1_OUT_BUF_OFFSET)
+    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_INTERRUPT_PER_BUF | USB_EPCTRL_TYPE_BULK | USB_EP1_OUT_BUF_OFFSET)
     str     r1, [r0, #4]                          @ ep_ctrl[1].out
 
     @ ep_ctrl[2].in   @ DPRAM + 0x010  (EP2 IN, interrupt, 8 bytes)
-    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_TYPE_INTERRUPT | USB_EP2_IN_BUF_OFFSET)
+    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_INTERRUPT_PER_BUF | USB_EPCTRL_TYPE_INTERRUPT | USB_EP2_IN_BUF_OFFSET)
     str     r1, [r0, #8]                          @ ep_ctrl[2].in
 
     bx      lr
@@ -747,20 +846,26 @@ _usb_handle_buff_status:
     ldr     r4, =USBCTRL_REGS_BASE
     ldr     r5, [r4, #USB_BUFF_STATUS]            @ raw bits
 
-    @ EP0 IN (bit 0): apply deferred SET_ADDRESS if pending
+    @ EP0 IN (bit 0): either continue a multi-packet IN transfer (e.g. the
+    @ 67-byte config descriptor split into 64 + 3) or apply deferred
+    @ SET_ADDRESS if a control transfer just finished.
     movs    r6, #1
     tst     r5, r6
     beq     .Lnoep0in
+    @ W1C bit 0 BEFORE doing more work so a follow-on usb_ep_send -> buf_ctrl
+    @ store sees a clean status (avoid races with a quick host).
+    movs    r0, #1
+    str     r0, [r4, #USB_BUFF_STATUS]
+    bl      _usb_ep0_tx_continue
+    cbnz    r0, .Lnoep0in                         @ shipped another chunk - done
+    @ No more chunks pending; consider this the end of a control transfer.
     ldr     r0, =usb_pending_address
     ldrb    r1, [r0]
-    cbz     r1, 1f
+    cbz     r1, .Lnoep0in
     @ Apply: ADDR_ENDP = pending; clear pending
     str     r1, [r4, #USB_ADDR_ENDP]
     movs    r2, #0
     strb    r2, [r0]
-1:  @ W1C bit 0
-    movs    r0, #1
-    str     r0, [r4, #USB_BUFF_STATUS]
 .Lnoep0in:
 
     @ EP0 OUT (bit 1) - host's ZLP status stage; nothing to do
