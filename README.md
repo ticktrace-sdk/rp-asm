@@ -53,18 +53,18 @@ lower tiers (T1/T2/T3) cover it.
 | `systick.S`   | ✅ Direct      | `systick_usb_demo_flash` — 100 ms SysTick @ proc clock, vec[15] patch, ISR fires at 5× the main-loop heartbeat rate as expected |
 | `pwm.S`       | ✅ Direct      | `pwm_usb_demo_flash` — slice 4 ch B (GP25), DIV/TOP/CC/EN, software triangle fade with visible LED breathing + CDC level stream |
 | `dma.S`       | ✅ Direct      | `dma_usb_demo_flash` — 256-word mem-to-mem copy with `DMA_CTRL_MEM2MEM_WORD`, BUSY spin, word-wise compare reports `dma OK iter=N` each second |
-| `watchdog.S`  | 🟡 Indirect    | `blinky_flash` calls `watchdog_disable`; kick / timeout paths untested |
+| `adc.S`       | ✅ Direct      | `data_usb_demo_flash` — temp sensor (channel 8) reads `adc temp=N` each iteration |
+| `sha256.S`    | ✅ Direct      | `data_usb_demo_flash` — `sha256_compute("abc",3,...)` returns canonical NIST FIPS-180-4 digest `ba7816bf8f01cfea...f20015ad` |
+| `sched.S`     | ✅ Direct      | `sched_usb_demo_flash` — TIMER0 alarm posts task via NVIC, t_consumer drains SPSC + prints |
+| `spsc.S`      | ✅ Direct      | `sched_usb_demo_flash` — ISR pushes counter byte, task pops; `byte=N` increments monotonically with iter |
+| `sched_stats.S` | ✅ Direct    | `sched_usb_demo_flash` — `inv=N cyc=NNNNN` (cyc grows by ~2500 per task fire, matches expected task-body cycle cost) |
+| `trace.S`     | ✅ Direct      | `trace_usb_demo_flash` — DWT cycle counter; busy_loop_3M reads 3000007 (3M + 7 cycle overhead) |
+| `watchdog.S`  | ✅ Direct      | `watchdog_usb_demo_flash` — `watchdog_enable` + `watchdog_feed` + intentional starve; observe kick loop, then chip-level reset (LED stops, USB re-enumerates). Required correcting `CTRL.ENABLE` bit (was 31 = TRIGGER, datasheet says 30) and setting `PSM_WDSEL = 0x01FFFFF3` |
+| `trng.S`      | 🟡 Indirect    | `data_usb_demo_flash` reads one valid 32-bit value but TRNG doesn't refill EHR between polls (same value every iter); needs deeper investigation |
+| `pio.S`       | 🟡 Indirect    | `pio_usb_demo_flash` builds + main loop runs, but the SM doesn't drive GP25 on real hardware; LED no-blink — investigation TBD |
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
-| `i2c.S`       | ❌ Not yet     | T1/T3 only                                                          |
-| `spi.S`       | ❌ Not yet     | T1/T3 only                                                          |
-| `adc.S`       | ❌ Not yet     | T1 only                                                             |
-| `trng.S`      | ❌ Not yet     | T1 only                                                             |
-| `sha256.S`    | ❌ Not yet     | T1 only                                                             |
-| `pio.S`       | ❌ Not yet     | T1 only                                                             |
-| `trace.S`     | ❌ Not yet     | T1 only                                                             |
-| `sched.S`     | ❌ Not yet     | T1 only                                                             |
-| `spsc.S`      | ❌ Not yet     | T1 only                                                             |
-| `sched_stats.S` | ❌ Not yet   | T1 only                                                             |
+| `i2c.S`       | ❌ Not yet     | T1/T3 only — needs external I2C peripheral                          |
+| `spi.S`       | ❌ Not yet     | T1/T3 only — needs external SPI peripheral                          |
 
 When a new driver is hardware-verified, update the row and reference
 the UF2 (and any debug observation — UART log, scope trace, dmesg
