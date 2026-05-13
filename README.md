@@ -37,8 +37,9 @@ banner + blink) is 728 bytes of `.text`. Every peripheral demo lives in
 ## Build
 
 ```
-sudo apt install binutils-arm-none-eabi python3
-make            # build/blinky.uf2 + every examples/*.S
+sudo apt install binutils-arm-none-eabi python3 python3-venv
+make pydeps     # one-shot: create .venv + install unicorn/pyelftools/pytest
+make            # build/blinky.uf2 + every examples/*.S (SRAM-resident, for tests)
 make test       # T1 + T2
 make test-all   # + T3 (Renode)
 make bench      # build/bench_*.uf2 (the comparison suite vs pico-sdk)
@@ -47,8 +48,17 @@ make bench-sizes # print image-size table (no flash needed)
 
 ## Flash
 
+Real hardware requires the **flash-resident** UF2 variant -- SRAM
+images don't run reliably on Pico 2 (RP2350-A2 silicon).  See
+[docs/boot.md](docs/boot.md) for the bring-up story.
+
+```
+make build/blinky_flash.uf2         # default M2 firmware
+make build/<example>_flash.uf2      # any example
+```
+
 Hold **BOOTSEL** on the Pico 2 while plugging in USB. The bootrom mounts
-as a USB MSC device; drag any `build/*.uf2` onto it.
+as a USB MSC device; drag the `_flash.uf2` onto it.
 
 Open a serial terminal at **115200 8N1** on UART0 TX (GP0 / pin 1).
 
@@ -58,7 +68,8 @@ Open a serial terminal at **115200 8N1** on UART0 TX (GP0 / pin 1).
 include/<periph>.inc       register maps + bitfields, one file per peripheral
 src/<periph>.S             driver implementations
 examples/<periph>_demo.S   self-contained example, builds to build/<periph>_demo.uf2
-link/sram.ld               SRAM linker script (image at 0x20000000)
+link/sram.ld               SRAM linker script (image at 0x20000000, for tests)
+link/flash.ld              flash linker script (image at 0x10000000, for hardware)
 tools/uf2.py               bin -> UF2 packer (family rp2350-arm-s)
 tests/unicorn/             T1 host harness + per-driver tests
 tests/qemu/                T2 generic Cortex-M33 ISA smoke runner
@@ -72,6 +83,7 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 | Doc                  | What it covers                                         |
 | -------------------- | ------------------------------------------------------ |
 | `docs/apps.md`       | Build a Pico 2 app from scratch — function anatomy (prologue/body/epilogue), multi-file projects, IRQ handlers, Makefile wiring, debugging recipes |
+| `docs/boot.md`       | Bootrom → `_reset` → `main`: M33 prologue, vector relocation, SRAM-vs-flash, how to debug a hardware bring-up hang |
 | `docs/calling.md`    | AAPCS conventions, how drivers call each other, stack discipline, tail-calling, IRQ handler ABI, cycle costs |
 | `docs/clocks.md`     | XOSC/PLL bring-up, clock tree, baud-recomputation hook |
 | `docs/gpio.md`       | 48-pin GPIO + PADS, IRQ programming, ISO/OD erratum    |
