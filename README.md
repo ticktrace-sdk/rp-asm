@@ -52,9 +52,9 @@ lower tiers (T1/T2/T3) cover it.
 | `nvic.S`      | ✅ Direct      | `timer_usb_demo_flash` (line 0) + `usb_cdc_echo_demo_flash` (line 14) — install + enable for two different IRQ lines, both vector to their handlers |
 | `systick.S`   | ✅ Direct      | `systick_usb_demo_flash` — 100 ms SysTick @ proc clock, vec[15] patch, ISR fires at 5× the main-loop heartbeat rate as expected |
 | `pwm.S`       | ✅ Direct      | `pwm_usb_demo_flash` — slice 4 ch B (GP25), DIV/TOP/CC/EN, software triangle fade with visible LED breathing + CDC level stream |
+| `dma.S`       | ✅ Direct      | `dma_usb_demo_flash` — 256-word mem-to-mem copy with `DMA_CTRL_MEM2MEM_WORD`, BUSY spin, word-wise compare reports `dma OK iter=N` each second |
 | `watchdog.S`  | 🟡 Indirect    | `blinky_flash` calls `watchdog_disable`; kick / timeout paths untested |
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
-| `dma.S`       | ❌ Not yet     | T1/T3 only                                                          |
 | `i2c.S`       | ❌ Not yet     | T1/T3 only                                                          |
 | `spi.S`       | ❌ Not yet     | T1/T3 only                                                          |
 | `adc.S`       | ❌ Not yet     | T1 only                                                             |
