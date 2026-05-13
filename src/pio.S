@@ -131,9 +131,11 @@ pio_sm_set_wrap:
     muls    r0, r0, r1
     adds    r0, r0, #PIO_SM0_EXECCTRL
     ldr     r5, [r4, r0]
-    @ Clear bits [16:7] (WRAP fields)
-    movw    r1, #0x1F80                   @ low half of mask
-    movt    r1, #0x0001
+    @ Clear bits [16:7] (WRAP_BOTTOM[11:7] + WRAP_TOP[16:12]).
+    @ Mask = 0x0001_FF80; WRAP_TOP resets to 0x1F so getting bits 13/14/15
+    @ wrong here lets stale ones stay and the SM runs past the program.
+    movw    r1, #0xFF80                   @ low half: bits 7..15
+    movt    r1, #0x0001                   @ high half: bit 16
     bic     r5, r5, r1
     @ Pack: bottom @ bit 7, top @ bit 12
     and     r2, #0x1F

@@ -44,15 +44,16 @@ suffix_crlf:    .asciz "\r\n"
     .align 2
     .global pio_blink_program
 pio_blink_program:
-    .word 0xFF01            @ 0: SET PINS, 1 [31]
-    .word 0xE05F            @ 1: SET Y, 31
-    .word 0xBF42            @ 2: NOP [31]
-    .word 0x0082            @ 3: JMP Y--, 2
-    .word 0xFF00            @ 4: SET PINS, 0 [31]
-    .word 0xE05F            @ 5: SET Y, 31
-    .word 0xBF42            @ 6: NOP [31]
-    .word 0x0086            @ 7: JMP Y--, 6
-    .equ PIO_BLINK_LEN, 8
+    .word 0xE081            @ 0: SET PINDIRS, 1     -> drive GP25 as output
+    .word 0xFF01            @ 1: SET PINS, 1 [31]
+    .word 0xE05F            @ 2: SET Y, 31
+    .word 0xBF42            @ 3: NOP [31]
+    .word 0x0083            @ 4: JMP Y--, 3
+    .word 0xFF00            @ 5: SET PINS, 0 [31]
+    .word 0xE05F            @ 6: SET Y, 31
+    .word 0xBF42            @ 7: NOP [31]
+    .word 0x0087            @ 8: JMP Y--, 7
+    .equ PIO_BLINK_LEN, 9
 
 @ ----------------------------------------------------------------------------
 @ _put_uint_decimal
@@ -134,11 +135,12 @@ main:
     movs    r3, #0                                @ frac
     bl      pio_sm_set_clkdiv
 
-    @ Wrap 0..7
+    @ Wrap 1..8 -- SET PINDIRS at addr 0 runs once at start, then SM
+    @ loops in [1, 8] forever.
     movs    r0, #0
     movs    r1, #0
-    movs    r2, #0                                @ bottom
-    movs    r3, #7                                @ top
+    movs    r2, #1                                @ bottom
+    movs    r3, #8                                @ top
     bl      pio_sm_set_wrap
 
     @ SET pin base = LED_PIN, count = 1
