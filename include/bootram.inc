@@ -1,36 +1,44 @@
 @ =============================================================================
-@ bootram.inc - BOOTRAM region constants.
+@ bootram.inc - BOOTRAM bus-endpoint constants (hardware registers only).
 @
-@ The BOOTRAM is a 1 KiB SRAM block (separate from the four 64 KiB main
-@ SRAM banks) used by the bootrom for its scratch state during boot.
-@ Not all of it is application-free; the layout (per RP2350 datasheet
-@ + pico-sdk crt0/flash/bootrom sources) is:
+@ The BOOTRAM bus endpoint at 0x400E0000 hosts two distinct things:
 @
-@   0x000..0x0FF  bootrom-owned: boot2 / XIP setup stub (256 B).  Required
-@                 to re-enable XIP after flash ops.  DO NOT touch.
-@   0x100..0x2FF  application-free scratch (512 B).  Use this region.
-@   0x300..0x37F  reserved for bootrom post-boot state (e.g. version
-@                 downgrade erase address at 0x338, TBYB flag at 0x348).
-@                 DO NOT touch.
-@   0x380..0x3FF  application-free scratch (128 B).
-@   0x800+        hardware regs (WRITE_ONCE, BOOTLOCK*, etc.) - not RAM.
+@   0x000..0x3FF  1 KiB of SRAM, BOOTROM-OWNED.  Per RP2350 datasheet
+@                 section 4.3:
+@                   "It is possible to use boot RAM for user-defined
+@                    purposes, but this is not recommended, as it may
+@                    cause ROM APIs to behave unpredictably.  Calling
+@                    into the ROM could modify data stored in boot RAM."
+@                 Also:
+@                   "Boot RAM is hardwired to permit Secure access only
+@                    (Arm) or Machine-mode access only (RISC-V)."
+@                 The bootrom stores the resident partition table, XIP
+@                 setup callback (formerly boot2), and ROM-API scratch
+@                 here.  We do NOT export this region as application
+@                 scratch - use main SRAM (0x20000000+) instead.
 @
-@ The total RAM region (0x400E0000..0x400E0400 = 1 KiB) is followed by
-@ the BOOTRAM hardware register block at 0x400E0800.
+@   0x800+        Hardware registers (WRITE_ONCE0/1, BOOTLOCK_STAT,
+@                 BOOTLOCK0..7).  These are application-accessible but
+@                 BOOTLOCKn are typically reserved for bootrom use - the
+@                 SDK's hardware_boot_lock APIs gate access to them.
+@                 WRITE_ONCE0/1 are sticky (set-only-until-reset) flags
+@                 used in secure-boot features.
 @
-@ We define BOOTRAM_APP_BASE as the start of the first app-free chunk
-@ so demos can stash scratch values without colliding with the bootrom.
+@ Reference: RP2350 datasheet section 4.3.1 "List of registers".
 @ =============================================================================
 
-    .equ BOOTRAM_BASE,        0x400E0000
-    .equ BOOTRAM_SIZE,        0x400        @ 1 KiB total
-    .equ BOOTRAM_END,         0x400E0400
+    .equ BOOTRAM_BASE,                  0x400E0000
+    .equ BOOTRAM_SIZE,                  0x400         @ 1 KiB SRAM region
 
-    .equ BOOTRAM_BOOT2_BASE,  0x400E0000   @ boot2 stub, 256 B (do not touch)
-    .equ BOOTRAM_BOOT2_END,   0x400E0100
-
-    .equ BOOTRAM_APP_BASE,    0x400E0100   @ start of app-free scratch
-    .equ BOOTRAM_APP_END,     0x400E0300   @ end of first free chunk
-
-    .equ BOOTRAM_BOOTROM_STATE_BASE, 0x400E0300   @ bootrom post-boot state
-    .equ BOOTRAM_BOOTROM_STATE_END,  0x400E0380
+    @ Hardware registers (offsets from BOOTRAM_BASE).
+    .equ BOOTRAM_WRITE_ONCE0_OFFSET,    0x800
+    .equ BOOTRAM_WRITE_ONCE1_OFFSET,    0x804
+    .equ BOOTRAM_BOOTLOCK_STAT_OFFSET,  0x808
+    .equ BOOTRAM_BOOTLOCK0_OFFSET,      0x80c
+    .equ BOOTRAM_BOOTLOCK1_OFFSET,      0x810
+    .equ BOOTRAM_BOOTLOCK2_OFFSET,      0x814
+    .equ BOOTRAM_BOOTLOCK3_OFFSET,      0x818
+    .equ BOOTRAM_BOOTLOCK4_OFFSET,      0x81c
+    .equ BOOTRAM_BOOTLOCK5_OFFSET,      0x820
+    .equ BOOTRAM_BOOTLOCK6_OFFSET,      0x824
+    .equ BOOTRAM_BOOTLOCK7_OFFSET,      0x828

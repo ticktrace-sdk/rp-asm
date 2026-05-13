@@ -17,7 +17,7 @@ Python is only used host-side, for a UF2 packer and the test harness.
 | M4        | full PL011 UART, I2C0/1, SPI0/1, USB device CDC-ACM    | done   |
 | M5        | SHA256, ADC, TRNG, PIO controller (no pioasm yet)      | done   |
 | M6        | dual-core launch, SIO FIFO mailbox, hardware spinlocks, interpolators | done |
-| M7        | XIP flash boot config (QMI clkdiv tune) + OTP read + BOOTRAM + bootrom services (1200-baud BOOTSEL trick); glitch detector deferred | partial |
+| M7        | XIP flash boot config (QMI clkdiv tune) + OTP read + bootrom services (1200-baud BOOTSEL trick + `rom_reset_to_bootsel`); glitch detector deferred | partial |
 | M8        | example gallery + cycle-counting docs                  | deferred |
 
 **Tests:** **278 T1** (Unicorn) + **3 T2** (QEMU) all green — every
@@ -68,7 +68,7 @@ lower tiers (T1/T2/T3) cover it.
 | `qmi.S`       | ✅ Direct      | `qmi_usb_demo_flash` — `qmi_set_clkdiv(2)` (75 MHz SCK) drops 16 KiB XIP→SRAM cold-cache copy from ~34k cycles to ~27k cycles (1.2× speedup); function executes from SRAM via the new `.ramfunc` section to avoid pulling QSPI config out from under our own instruction fetch |
 | `otp.S`       | ✅ Direct      | `otp_usb_demo_flash` — reads CHIPID0..3 (`0x3d296d86_f94b7b5c` on the test board), RANDID0..3 (low half populated, high half 0 — some batches), FLASH_DEVINFO (0 on the test board); all reads deterministic across iterations |
 | `bootrom.S`   | 🟡 To verify   | `bootsel_usb_demo_flash` — send `b` via CDC, or `stty -F /dev/ttyACM0 1200` from the host, to invoke `rom_reset_to_bootsel`; device disconnects and re-enumerates as `RPI-RP2` mass-storage |
-| `bootram.S`   | 🟡 To verify   | `bootsel_usb_demo_flash` — `bootram_cookie=0xcafe2350` printed back from `BOOTRAM_BASE` after a write/read round-trip                |
+| BOOTRAM       | n/a            | per RP2350 datasheet §4.3 the 1 KiB SRAM at 0x400E0000 is bootrom-owned and not application-writable; `include/bootram.inc` exposes only the hardware register offsets (`WRITE_ONCE0/1`, `BOOTLOCK_STAT`, `BOOTLOCK0..7` at +0x800) for future use |
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
 | `i2c.S`       | ❌ Not yet     | T1/T3 only — needs external I2C peripheral                          |
 | `spi.S`       | ❌ Not yet     | T1/T3 only — needs external SPI peripheral                          |
