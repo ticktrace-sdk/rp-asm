@@ -61,7 +61,7 @@ lower tiers (T1/T2/T3) cover it.
 | `trace.S`     | ✅ Direct      | `trace_usb_demo_flash` — DWT cycle counter; busy_loop_3M reads 3000007 (3M + 7 cycle overhead) |
 | `watchdog.S`  | ✅ Direct      | `watchdog_usb_demo_flash` — `watchdog_enable` + `watchdog_feed` + intentional starve; observe kick loop, then chip-level reset (LED stops, USB re-enumerates). Required correcting `CTRL.ENABLE` bit (was 31 = TRIGGER, datasheet says 30) and setting `PSM_WDSEL = 0x01FFFFF3` |
 | `pio.S`       | ✅ Direct      | `pio_usb_demo_flash` — 9-instruction hand-encoded blink program at PIO0 SM0, `SET PINDIRS,1` + toggle loop, visible LED at ~1 Hz; required two fixes: `pio_sm_set_wrap` mask (bits 13-15 of WRAP_TOP were stuck at reset value) and adding `SET PINDIRS` to the program so the SM drives the pad |
-| `trng.S`      | 🟡 Indirect    | `data_usb_demo_flash` reads one valid 32-bit value but TRNG doesn't refill EHR between polls (same value every iter); needs deeper investigation |
+| `trng.S`      | ✅ Direct      | `data_usb_demo_flash` — fresh 32-bit value each iteration after fixing `trng_get_random_word` to drain all 6 EHR words before ICR (CryptoCell EHR only refills once fully consumed) |
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
 | `i2c.S`       | ❌ Not yet     | T1/T3 only — needs external I2C peripheral                          |
 | `spi.S`       | ❌ Not yet     | T1/T3 only — needs external SPI peripheral                          |
