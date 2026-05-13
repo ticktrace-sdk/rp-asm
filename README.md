@@ -17,7 +17,7 @@ Python is only used host-side, for a UF2 packer and the test harness.
 | M4        | full PL011 UART, I2C0/1, SPI0/1, USB device CDC-ACM    | done   |
 | M5        | SHA256, ADC, TRNG, PIO controller (no pioasm yet)      | done   |
 | M6        | dual-core launch, SIO FIFO mailbox, hardware spinlocks, interpolators | done |
-| M7        | XIP flash boot config (QMI clkdiv tune); OTP/BOOTRAM/glitch detector deferred | partial |
+| M7        | XIP flash boot config (QMI clkdiv tune) + OTP read; BOOTRAM/glitch detector deferred | partial |
 | M8        | example gallery + cycle-counting docs                  | deferred |
 
 **Tests:** **278 T1** (Unicorn) + **3 T2** (QEMU) all green — every
@@ -66,6 +66,7 @@ lower tiers (T1/T2/T3) cover it.
 | `spinlock.S`  | ✅ Direct      | `multicore_full_usb_demo_flash` — `shared_counter` incremented by core 1 under `spin_lock(0)`, snapshotted by core 0 under same lock; monotonic across host observations |
 | `interp.S`    | ✅ Direct      | `multicore_full_usb_demo_flash` — INTERP0 lane 0 with `BASE0=1000`, `ACCUM0 = shared_counter`, `MASK_MSB=31`; PEEK returns `counter + 1000` exactly each line |
 | `qmi.S`       | ✅ Direct      | `qmi_usb_demo_flash` — `qmi_set_clkdiv(2)` (75 MHz SCK) drops 16 KiB XIP→SRAM cold-cache copy from ~34k cycles to ~27k cycles (1.2× speedup); function executes from SRAM via the new `.ramfunc` section to avoid pulling QSPI config out from under our own instruction fetch |
+| `otp.S`       | ✅ Direct      | `otp_usb_demo_flash` — reads CHIPID0..3 (`0x3d296d86_f94b7b5c` on the test board), RANDID0..3 (low half populated, high half 0 — some batches), FLASH_DEVINFO (0 on the test board); all reads deterministic across iterations |
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
 | `i2c.S`       | ❌ Not yet     | T1/T3 only — needs external I2C peripheral                          |
 | `spi.S`       | ❌ Not yet     | T1/T3 only — needs external SPI peripheral                          |
