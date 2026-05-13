@@ -150,6 +150,23 @@ build/%.elf: rust_apps/%/Cargo.toml build/librp_asm.a
 	@cp rust_apps/$*/target/thumbv8m.main-none-eabi/release/$* $@
 	@$(SIZE) $@
 
+# -------------------------------------------------------------- flash bridges
+# Same C / Rust apps but linked at 0x10000000 for real-hardware boot.
+# Uses link/flash.ld; otherwise identical to the SRAM rules above.
+build/%_flash.elf: c_apps/%/main.c $(DRIVER_OBJ) $(C_BRIDGE_OBJ) link/flash.ld
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -c $< -o build/$*.c.o
+	@$(LD) -T link/flash.ld -nostdlib --gc-sections -Map=build/$*_flash.map -o $@ \
+	    $(DRIVER_OBJ) $(C_BRIDGE_OBJ) build/$*.c.o
+	@$(SIZE) $@
+
+build/%_flash.elf: rust_apps/%/Cargo.toml build/librp_asm.a
+	@mkdir -p $(@D)
+	@cd rust_apps/$* && RP_ASM_LINK_SCRIPT=$(abspath link/flash.ld) \
+	    CARGO_TARGET_DIR=target_flash cargo build --release --quiet
+	@cp rust_apps/$*/target_flash/thumbv8m.main-none-eabi/release/$* $@
+	@$(SIZE) $@
+
 # -------------------------------------------------------------- main image
 $(TARGET).uf2: $(TARGET).bin tools/uf2.py
 	@python3 tools/uf2.py $< $(LOAD_ADDR) $@

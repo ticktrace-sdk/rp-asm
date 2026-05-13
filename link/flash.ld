@@ -42,10 +42,12 @@ SECTIONS
     .bss (NOLOAD) : ALIGN(4)
     {
         _sbss = .;
+        __bss_start__ = .;          /* C-runtime alias for _c_runtime_init */
         *(.bss*)
         *(COMMON)
         . = ALIGN(4);
         _ebss = .;
+        __bss_end__ = .;
     } > SRAM
 
     _stack_top = ORIGIN(SRAM) + LENGTH(SRAM) - 4;
