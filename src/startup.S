@@ -134,6 +134,20 @@ _reset:
     ldr     r1, =_ram_vectors
     str     r1, [r0]
 
+    @ Copy .ramfunc from its load address (in flash for flash-resident
+    @ builds; same address for sram-resident) into its VMA in SRAM.  The
+    @ linker emits __ramfunc_load__ / start / end so this works for both
+    @ link variants.  Empty .ramfunc section -> the loop exits immediately.
+    ldr     r0, =__ramfunc_load__
+    ldr     r1, =__ramfunc_start__
+    ldr     r2, =__ramfunc_end__
+3:  cmp     r1, r2
+    bge     4f
+    ldr     r3, [r0], #4
+    str     r3, [r1], #4
+    b       3b
+4:
+
     @ Mask of peripherals we want out of reset.  GPIO + pads only - uart0
     @ is released by uart_init (so callers that don't use UART don't wait
     @ for its RESET_DONE, which on real silicon may not assert until

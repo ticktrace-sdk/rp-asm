@@ -39,6 +39,18 @@ SECTIONS
         . = ALIGN(4);
     } > SRAM AT > FLASH
 
+    /* RAM functions: code that must execute from SRAM (e.g. QMI
+       reconfiguration that would glitch if running from XIP).  LMA in
+       flash, VMA in SRAM; copied to SRAM by _reset before main runs. */
+    .ramfunc : ALIGN(4)
+    {
+        __ramfunc_start__ = .;
+        *(.ramfunc*)
+        . = ALIGN(4);
+        __ramfunc_end__ = .;
+    } > SRAM AT > FLASH
+    __ramfunc_load__ = LOADADDR(.ramfunc);
+
     .bss (NOLOAD) : ALIGN(4)
     {
         _sbss = .;

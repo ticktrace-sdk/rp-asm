@@ -58,6 +58,8 @@ DRIVER_SRC += src/sched.S
 DRIVER_SRC += src/spsc.S
 # --- Per-task DWT cycle accounting (opt-in via task_create_traced).
 DRIVER_SRC += src/sched_stats.S
+# --- M7 (QMI) additive append - flash speed tuning.
+DRIVER_SRC += src/qmi.S
 # Scheduler depends on nvic.S helpers; sched-using examples must
 # `.include "src/nvic.S"` themselves (matches the pattern other examples
 # use for timer.S / systick.S etc).

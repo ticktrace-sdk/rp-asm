@@ -45,6 +45,18 @@ SECTIONS
         . = ALIGN(4);
     } > SRAM
 
+    /* SRAM-resident image: .ramfunc has the same VMA and LMA - no copy
+       needed.  Still bracket it with the load symbols so startup.S can
+       call its copy loop unconditionally. */
+    .ramfunc : ALIGN(4)
+    {
+        __ramfunc_start__ = .;
+        *(.ramfunc*)
+        . = ALIGN(4);
+        __ramfunc_end__ = .;
+    } > SRAM
+    __ramfunc_load__ = __ramfunc_start__;
+
     .bss (NOLOAD) : ALIGN(4)
     {
         _sbss = .;
