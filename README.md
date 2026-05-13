@@ -30,6 +30,46 @@ public driver function has at least one register-trace assertion. T3
 | T2   | mps2-an505 sanity + ISA arithmetic + SysTick polled COUNTFLAG |
 | T3   | 10 .resc scripts: blinky, clocks, gpio, timer, pwm, dma, uart loopback, i2c eeprom, spi loopback, usb controller bring-up |
 
+### Hardware verification (T4, manual)
+
+Status of each `src/<peripheral>.S` driver on a real Pico 2 (RP2350-A2).
+"Direct" = a `build/<name>_flash.uf2` exercises the driver's intended
+feature.  "Indirect" = the driver is called by a directly-verified
+image but its primary feature isn't observed.  "Not yet" = only the
+lower tiers (T1/T2/T3) cover it.
+
+| Driver        | Status         | Verified via / notes                                                |
+| ------------- | -------------- | ------------------------------------------------------------------- |
+| `startup.S`   | ✅ Direct      | every flash UF2 — M33 prologue, vector relocation, RESETS, `b main` |
+| `xosc.S`      | ✅ Direct      | `blinky_flash` — 12 MHz XOSC stable                                 |
+| `pll.S`       | ✅ Direct      | `blinky_flash` — `pll_sys` @ 150 MHz, `pll_usb` @ 48 MHz            |
+| `clocks.S`    | ✅ Direct      | `blinky_flash` — `clk_sys` / `clk_peri` / `clk_usb` routing         |
+| `gpio.S`      | ✅ Direct      | `blinky_flash` — GP25 LED toggle observed                           |
+| `uart.S`      | ✅ Direct      | `blinky_flash` — banner @ 115200 8N1 on UART0 TX                    |
+| `usb.S`       | ✅ Direct      | `usb_cdc_echo_demo_flash` — full enumeration + bidirectional CDC echo |
+| `nvic.S`      | 🟡 Indirect    | `usb_cdc_echo_demo_flash` — install + enable USBCTRL_IRQ → vectors to ISR |
+| `tick.S`      | 🟡 Indirect    | `blinky_flash` calls `tick_init` but no tick-consumer verified yet  |
+| `watchdog.S`  | 🟡 Indirect    | `blinky_flash` calls `watchdog_disable`; kick / timeout paths untested |
+| `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
+| `timer.S`     | ❌ Not yet     | T1/T3 only                                                          |
+| `systick.S`   | ❌ Not yet     | T1/T2 only                                                          |
+| `dma.S`       | ❌ Not yet     | T1/T3 only                                                          |
+| `pwm.S`       | ❌ Not yet     | T1/T3 only                                                          |
+| `i2c.S`       | ❌ Not yet     | T1/T3 only                                                          |
+| `spi.S`       | ❌ Not yet     | T1/T3 only                                                          |
+| `adc.S`       | ❌ Not yet     | T1 only                                                             |
+| `trng.S`      | ❌ Not yet     | T1 only                                                             |
+| `sha256.S`    | ❌ Not yet     | T1 only                                                             |
+| `pio.S`       | ❌ Not yet     | T1 only                                                             |
+| `trace.S`     | ❌ Not yet     | T1 only                                                             |
+| `sched.S`     | ❌ Not yet     | T1 only                                                             |
+| `spsc.S`      | ❌ Not yet     | T1 only                                                             |
+| `sched_stats.S` | ❌ Not yet   | T1 only                                                             |
+
+When a new driver is hardware-verified, update the row and reference
+the UF2 (and any debug observation — UART log, scope trace, dmesg
+quote) in the commit message.
+
 **Image size:** the M2-default `build/blinky.uf2` (clock bring-up +
 banner + blink) is 728 bytes of `.text`. Every peripheral demo lives in
 `examples/` and builds to its own < 3 KB UF2.
