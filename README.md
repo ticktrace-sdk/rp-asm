@@ -16,7 +16,7 @@ Python is only used host-side, for a UF2 packer and the test harness.
 | M3        | GPIO/PADS (48 pins), TIMER0/1, SysTick, NVIC, DMA, PWM | done   |
 | M4        | full PL011 UART, I2C0/1, SPI0/1, USB device CDC-ACM    | done   |
 | M5        | SHA256, ADC, TRNG, PIO controller (no pioasm yet)      | done   |
-| M6        | dual-core launch (SIO FIFO handshake); spinlocks + interpolators deferred | partial |
+| M6        | dual-core launch, SIO FIFO mailbox, hardware spinlocks, interpolators | done |
 | M7        | XIP flash boot, OTP, BOOTRAM, glitch detector          | deferred |
 | M8        | example gallery + cycle-counting docs                  | deferred |
 
@@ -63,6 +63,8 @@ lower tiers (T1/T2/T3) cover it.
 | `pio.S`       | ✅ Direct      | `pio_usb_demo_flash` — 9-instruction hand-encoded blink program at PIO0 SM0, `SET PINDIRS,1` + toggle loop, visible LED at ~1 Hz; required two fixes: `pio_sm_set_wrap` mask (bits 13-15 of WRAP_TOP were stuck at reset value) and adding `SET PINDIRS` to the program so the SM drives the pad |
 | `trng.S`      | ✅ Direct      | `data_usb_demo_flash` — fresh 32-bit value each iteration after fixing `trng_get_random_word` to drain all 6 EHR words before ICR (CryptoCell EHR only refills once fully consumed) |
 | `multicore.S` | ✅ Direct      | `multicore_usb_demo_flash` — core 0 owns USB CDC (`c0 alive N` heartbeat), core 1 owns GP25 LED (2 Hz toggle). Both observables run concurrently, confirming the SIO FIFO launch handshake (`0,0,1,vtable,sp,entry`) and core 1's independent M33 prologue. |
+| `spinlock.S`  | ✅ Direct      | `multicore_full_usb_demo_flash` — `shared_counter` incremented by core 1 under `spin_lock(0)`, snapshotted by core 0 under same lock; monotonic across host observations |
+| `interp.S`    | ✅ Direct      | `multicore_full_usb_demo_flash` — INTERP0 lane 0 with `BASE0=1000`, `ACCUM0 = shared_counter`, `MASK_MSB=31`; PEEK returns `counter + 1000` exactly each line |
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
 | `i2c.S`       | ❌ Not yet     | T1/T3 only — needs external I2C peripheral                          |
 | `spi.S`       | ❌ Not yet     | T1/T3 only — needs external SPI peripheral                          |
