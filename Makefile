@@ -62,6 +62,11 @@ DRIVER_SRC += src/sched_stats.S
 DRIVER_SRC += src/qmi.S
 # --- M7 (OTP) additive append - read-only access to factory + user rows.
 DRIVER_SRC += src/otp.S
+# --- M7 (bootrom + BOOTRAM) additive append - ROM service lookup and the
+# 1 KiB SRAM scratch region.  bootrom.S provides rom_reset_to_bootsel,
+# which the USB CDC stack invokes on the 1200-baud reboot trick.
+DRIVER_SRC += src/bootrom.S
+DRIVER_SRC += src/bootram.S
 # Scheduler depends on nvic.S helpers; sched-using examples must
 # `.include "src/nvic.S"` themselves (matches the pattern other examples
 # use for timer.S / systick.S etc).
