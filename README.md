@@ -20,13 +20,13 @@ Python is only used host-side, for a UF2 packer and the test harness.
 | M7        | XIP flash boot, OTP, BOOTRAM, glitch detector          | deferred |
 | M8        | example gallery + cycle-counting docs                  | deferred |
 
-**Tests:** **270 T1** (Unicorn) + **3 T2** (QEMU) all green — every
+**Tests:** **278 T1** (Unicorn) + **3 T2** (QEMU) all green — every
 public driver function has at least one register-trace assertion. T3
 (Renode) green where renode is installed, cleanly skips otherwise.
 
 | Tier | Coverage |
 | ---- | -------- |
-| T1   | 270 cases across 18 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio, trace, sched, spsc, sched_stats) |
+| T1   | 278 cases across 19 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio, trace, sched, spsc, sched_stats, c_bridge) |
 | T2   | mps2-an505 sanity + ISA arithmetic + SysTick polled COUNTFLAG |
 | T3   | 10 .resc scripts: blinky, clocks, gpio, timer, pwm, dma, uart loopback, i2c eeprom, spi loopback, usb controller bring-up |
 
@@ -147,6 +147,8 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 | `docs/sched.md`      | NVIC-priority scheduler (QV-style) — 5-cycle `task_post`, 0 stack-per-task, BASEPRI critical sections, batch `task_post_n` |
 | `docs/spsc.md`       | Lock-free single-producer/single-consumer byte queue for ISR → soft-task pipelines |
 | `docs/sched_stats.md`| Opt-in per-task DWT cycle accounting — task_create_traced + getters |
+| `docs/c_bridge.md`   | Opt-in C bridge: write apps in C, drivers stay asm (branch `claude/c-rust-bridge`) |
+| `docs/rust_bridge.md`| Opt-in Rust bridge: `no_std` Rust apps via `rp-asm-sys` crate (same branch) |
 
 **New here?** Read `docs/apps.md` first — it walks you through writing
 your first app top-to-bottom. Then `docs/calling.md` for the formal

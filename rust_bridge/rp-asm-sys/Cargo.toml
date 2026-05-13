@@ -1,0 +1,9 @@
+[package]
+name = "rp-asm-sys"
+version = "0.1.0"
+edition = "2021"
+description = "Raw extern C bindings to the rp-asm driver core."
+publish = false
+
+[lib]
+name = "rp_asm_sys"

@@ -88,6 +88,68 @@ examples: $(EXAMPLE_UF2)
 
 bench: $(BENCH_UF2)
 
+# ============================================================================
+# C bridge — opt-in: builds C apps that link against the asm core.
+# Default `make` does NOT pull these in; users opt-in with `make c-apps`.
+# ============================================================================
+CC      := arm-none-eabi-gcc
+
+CFLAGS  := -mcpu=cortex-m33 -mthumb -mfloat-abi=soft \
+           -ffreestanding -fno-builtin -nostdlib \
+           -ffunction-sections -fdata-sections \
+           -Wall -Wextra -O2 \
+           -I c_bridge/include
+
+C_BRIDGE_SRC := c_bridge/runtime.S c_bridge/asm_libc.S
+C_BRIDGE_OBJ := $(patsubst c_bridge/%.S, build/c_bridge/%.o, $(C_BRIDGE_SRC))
+
+C_APP_DIRS := $(wildcard c_apps/*)
+C_APP_UF2  := $(patsubst c_apps/%, build/%.uf2, $(C_APP_DIRS))
+
+.PHONY: c-apps
+c-apps: $(C_APP_UF2)
+
+# Each c_apps/<name>/*.c becomes build/<name>.elf linked with DRIVER_OBJ +
+# C_BRIDGE_OBJ.
+build/c_bridge/%.o: c_bridge/%.S
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o $@ $<
+	@echo "  AS      $<"
+
+# Pattern: build/<name>.elf  <- c_apps/<name>/*.c
+build/%.elf: c_apps/%/main.c $(DRIVER_OBJ) $(C_BRIDGE_OBJ) link/sram.ld
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -c $< -o build/$*.c.o
+	@$(LD) $(LDFLAGS) -Map=build/$*.map -o $@ \
+	    $(DRIVER_OBJ) $(C_BRIDGE_OBJ) build/$*.c.o
+	@$(SIZE) $@
+
+# ============================================================================
+# Rust bridge — also opt-in.  Builds librp_asm.a (static archive of all
+# DRIVER_OBJ), then cargo links against it from rust_apps/*.
+# ============================================================================
+AR := arm-none-eabi-ar
+
+build/librp_asm.a: $(DRIVER_OBJ) $(C_BRIDGE_OBJ)
+	@mkdir -p $(@D)
+	@rm -f $@
+	@$(AR) rcs $@ $(DRIVER_OBJ) $(C_BRIDGE_OBJ)
+	@echo "  AR      $@"
+
+RUST_APP_DIRS := $(wildcard rust_apps/*)
+RUST_APP_UF2  := $(patsubst rust_apps/%, build/%.uf2, $(RUST_APP_DIRS))
+
+.PHONY: rust-apps
+rust-apps: $(RUST_APP_UF2)
+
+# Each rust_apps/<name>/ is a cargo project.  Build, locate the ELF,
+# objcopy to .bin, UF2-pack.
+build/%.elf: rust_apps/%/Cargo.toml build/librp_asm.a
+	@mkdir -p $(@D)
+	@cd rust_apps/$* && cargo build --release --quiet
+	@cp rust_apps/$*/target/thumbv8m.main-none-eabi/release/$* $@
+	@$(SIZE) $@
+
 # -------------------------------------------------------------- main image
 $(TARGET).uf2: $(TARGET).bin tools/uf2.py
 	@python3 tools/uf2.py $< $(LOAD_ADDR) $@

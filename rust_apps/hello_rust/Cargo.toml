@@ -1,0 +1,25 @@
+[package]
+name = "hello_rust"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "hello_rust"
+path = "src/main.rs"
+
+[dependencies]
+rp-asm-sys = { path = "../../rust_bridge/rp-asm-sys" }
+
+[profile.release]
+opt-level = "s"        # optimise for size (matches our 'every cycle matters' image-size goal)
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = false
+strip = true
+
+[profile.dev]
+opt-level = "s"
+debug = false
+panic = "abort"

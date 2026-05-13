@@ -48,10 +48,12 @@ SECTIONS
     .bss (NOLOAD) : ALIGN(4)
     {
         _sbss = .;
+        __bss_start__ = .;          /* C-runtime alias */
         *(.bss*)
         *(COMMON)
         . = ALIGN(4);
         _ebss = .;
+        __bss_end__ = .;
     } > SRAM
 
     /* Top-of-SRAM stack.  Reserve a 4-byte gap so a stray push at top
