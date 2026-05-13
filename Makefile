@@ -5,6 +5,7 @@
 ##   make clean
 ##
 ## Test targets (see tests/README.md for the full strategy):
+##   make pydeps        create .venv and install Python deps for T1/T2
 ##   make test          T1 + T2 (Unicorn + QEMU)
 ##   make test-t1       Unicorn host harness
 ##   make test-t2       QEMU semihosting sanity / ISA cases
@@ -79,7 +80,7 @@ BENCH_SRC := $(filter-out benchmarks/rp_asm/bench_lib.S, $(wildcard benchmarks/r
 BENCH_UF2 := $(patsubst benchmarks/rp_asm/%.S, build/%.uf2, $(BENCH_SRC))
 BENCH_ELF := $(patsubst benchmarks/rp_asm/%.S, build/%.elf, $(BENCH_SRC))
 
-.PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-all
+.PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-all pydeps
 .PRECIOUS: build/%.elf build/%.bin
 all: $(TARGET).uf2
 
@@ -160,7 +161,23 @@ clean:
 # them and exit non-zero on the first failure (set -e).  We deliberately do
 # NOT wrap pytest in `|| true` so a regression breaks the build.
 
-PYTEST ?= python3 -m pytest -q
+# Prefer .venv if it exists so `make test-*` picks up deps installed via
+# `make pydeps`; otherwise fall back to the system python3.
+VENV         := .venv
+VENV_PY      := $(VENV)/bin/python
+PY           := $(if $(wildcard $(VENV_PY)),$(VENV_PY),python3)
+PYTEST       ?= $(PY) -m pytest -q
+
+# pydeps: create .venv (if missing) and install Python test deps.
+pydeps: $(VENV_PY)
+	@echo "==== installing Python test deps into $(VENV) ===="
+	@$(VENV_PY) -m pip install --quiet --upgrade pip
+	@$(VENV_PY) -m pip install --quiet -r tests/unicorn/requirements.txt
+	@echo "PASS: pydeps  ($$($(VENV_PY) -c "import unicorn; print('unicorn', unicorn.__version__)"))"
+
+$(VENV_PY):
+	@echo "==== creating venv at $(VENV) ===="
+	@python3 -m venv $(VENV)
 
 test-t1: $(TARGET).elf $(EXAMPLE_UF2)
 	@echo "==== T1 (Unicorn host harness) ===="
