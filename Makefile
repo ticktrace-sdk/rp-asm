@@ -81,7 +81,7 @@ BENCH_UF2 := $(patsubst benchmarks/rp_asm/%.S, build/%.uf2, $(BENCH_SRC))
 BENCH_ELF := $(patsubst benchmarks/rp_asm/%.S, build/%.elf, $(BENCH_SRC))
 
 .PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-all pydeps
-.PRECIOUS: build/%.elf build/%.bin
+.PRECIOUS: build/%.elf build/%.bin build/%_flash.elf build/%_flash.bin
 all: $(TARGET).uf2
 
 examples: $(EXAMPLE_UF2)
@@ -118,6 +118,35 @@ build/%.bin: build/%.elf
 build/%.uf2: build/%.bin tools/uf2.py
 	@python3 tools/uf2.py $< $(LOAD_ADDR) $@
 	@echo "  UF2     $@"
+
+# -------------------------------------------------------------- flash variants
+# Default `blinky` is built from src/main.S; build/blinky_flash.uf2 produces
+# the same image linked at 0x10000000 for hardware boot.
+build/blinky_flash.elf: $(OBJ) link/flash.ld
+	@mkdir -p $(@D)
+	@$(LD) -T link/flash.ld -nostdlib --gc-sections -Map=build/blinky_flash.map -o $@ $(OBJ)
+	@$(SIZE) $@
+
+# Same source(s) as the SRAM image, but linked at 0x10000000 (XIP window).
+# Use these when targeting real hardware via BOOTSEL UF2 - SRAM-resident
+# images currently do not run reliably on the RP2350-A2 silicon shipping in
+# Pico 2 boards (the bootrom hands off but the core never reaches main).
+FLASH_LOAD_ADDR := 0x10000000
+
+build/%_flash.elf: examples/%.S $(DRIVER_OBJ) link/flash.ld
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o build/$*.example.o $<
+	@$(LD) -T link/flash.ld -nostdlib --gc-sections -Map=build/$*_flash.map -o $@ $(DRIVER_OBJ) build/$*.example.o
+	@$(SIZE) $@
+
+build/%_flash.bin: build/%_flash.elf
+	@$(OBJCOPY) -O binary $< $@
+	@echo "  BIN     $@"
+
+build/%_flash.uf2: build/%_flash.bin tools/uf2.py
+	@python3 tools/uf2.py $< $(FLASH_LOAD_ADDR) $@
+	@echo "  UF2     $@"
+
 
 # -------------------------------------------------------------- benchmarks
 # Like examples, but: (a) link in benchmarks/rp_asm/bench_lib.S, (b) bench

@@ -45,6 +45,12 @@ _vectors:
     .word 0                     @ 13  reserved
     .word _halt  + 1            @ 14  PendSV
     .word _halt  + 1            @ 15  SysTick
+    @ External IRQs 0..51 (RP2350 datasheet sec 3.2).  Default-handler =
+    @ _halt so a stray IRQ parks the core instead of executing garbage.
+    @ Callers wire real handlers via nvic_install_handler.
+    .rept 52
+    .word _halt + 1
+    .endr
 
 @ ----------------------------------------------------------------------------
 @ IMAGE_DEF block (picobin format).
@@ -86,18 +92,56 @@ _image_def:
     .align   2
     .global  _reset
 _reset:
-    @ VTOR <- _vectors
-    ldr     r0, =SCB_VTOR
-    ldr     r1, =_vectors
+    @ ---- RP2350 NO_FLASH bring-up (mirrors pico-sdk crt0.S _entry_point) ----
+    @ The bootrom hands off to an SRAM image without setting MSPLIM and may
+    @ not have initialised the RCP (coproc 7).  Without these three writes
+    @ the first stack push or any RCP-protected bootrom path will fault.
+    @
+    @ 1. Enable CP7 (RCP) full access in CPACR.
+    ldr     r0, =0xE000ED88                 @ CPACR
+    movs    r1, #0xC0
+    lsls    r1, r1, #8                      @ r1 = 0xC000 (CP7 bits = 11)
     str     r1, [r0]
 
-    @ Mask of peripherals we want out of reset
+    @ 2. Initialise RCP canary seeds if not already (mrc p7,#1 reports BMI
+    @    when already seeded; double-init is itself a fault).
+    mrc     p7, #1, APSR_nzcv, c0, c0, #0
+    bmi     1f
+    mcrr    p7, #8, r0, r0, c0
+    mcrr    p7, #8, r0, r0, c1
+    sev
+1:
+
+    @ 3. Zero MSPLIM (bootrom / debugger may have left it high).
+    movs    r0, #0
+    msr     msplim, r0
+
+    @ Copy the 68-entry vector table from its load image into SRAM so that
+    @ nvic_install_handler() can patch entries at runtime.  Flash-resident
+    @ images have read-only vectors at 0x10000000; SRAM-resident images
+    @ technically don't need this, but doing it unconditionally keeps both
+    @ paths identical (and VTOR is then always at a well-known SRAM address).
+    ldr     r0, =_vectors
+    ldr     r1, =_ram_vectors
+    movs    r2, #68                         @ words: 16 core + 52 external
+2:  ldr     r3, [r0], #4
+    str     r3, [r1], #4
+    subs    r2, #1
+    bne     2b
+
+    @ VTOR <- _ram_vectors
+    ldr     r0, =SCB_VTOR
+    ldr     r1, =_ram_vectors
+    str     r1, [r0]
+
+    @ Mask of peripherals we want out of reset.  GPIO + pads only - uart0
+    @ is released by uart_init (so callers that don't use UART don't wait
+    @ for its RESET_DONE, which on real silicon may not assert until
+    @ clk_peri is up).
     movs    r2, #1
     lsls    r3, r2, #RESETS_io_bank0
     lsls    r4, r2, #RESETS_pads_bank0
-    lsls    r5, r2, #RESETS_uart0
-    orrs    r3, r4
-    orrs    r3, r5                  @ r3 = (1<<6)|(1<<9)|(1<<26)
+    orrs    r3, r4                  @ r3 = (1<<6)|(1<<9)
 
     @ Clear those bits in RESETS_RESET via the atomic CLR alias
     ldr     r0, =RESETS_BASE + ATOMIC_CLR + RESETS_RESET
@@ -120,3 +164,16 @@ _reset:
 _halt:
     wfi
     b       _halt
+
+@ ----------------------------------------------------------------------------
+@ _ram_vectors - SRAM copy of the vector table, populated by _reset.
+@
+@ Cortex-M33 VTOR.TBLOFF[31:7] requires the vector table to be aligned to a
+@ power-of-2 boundary >= the table size.  68 entries * 4 bytes = 272 bytes;
+@ the smallest power of 2 >= 272 is 512, so we align to 512 bytes here.
+@ ----------------------------------------------------------------------------
+    .section .bss._ram_vectors, "aw", %nobits
+    .align   9                       @ 2^9 = 512-byte alignment for VTOR
+    .global  _ram_vectors
+_ram_vectors:
+    .space   68 * 4                  @ 68 * 4 = 272 bytes

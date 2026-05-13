@@ -563,6 +563,19 @@ uart_init:
     .thumb_func
     .global  uart0_init
 uart0_init:
+    @ ---- 0. Release UART0 from reset and wait for RESET_DONE -------------
+    @ startup.S only releases io_bank0 + pads_bank0 (uart0's RESET_DONE
+    @ won't assert there because clk_peri isn't running yet); we do uart0
+    @ here once the caller has run clocks_init.
+    movs    r1, #1
+    lsls    r1, #RESETS_uart0               @ r1 = 1 << 26
+    ldr     r0, =RESETS_BASE + ATOMIC_CLR + RESETS_RESET
+    str     r1, [r0]
+    ldr     r0, =RESETS_BASE + RESETS_RESET_DONE
+1:  ldr     r2, [r0]
+    ands    r2, r1
+    beq     1b
+
     @ ---- 1+2. Clear ISO/OD on both pads via atomic CLR --------------------
     movs    r2, #(0x180 >> 7)               @ 0x180 = ISO|OD
     lsls    r2, #7                          @ r2 = 0x180

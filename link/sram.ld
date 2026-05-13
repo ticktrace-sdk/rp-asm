@@ -30,7 +30,7 @@ SECTIONS
     .text 0x20000000 : ALIGN(4)
     {
         KEEP(*(.vectors))
-        . = 0x40;                       /* park IMAGE_DEF at a known offset */
+        . = 0x180;                      /* park IMAGE_DEF past 68-entry vectors */
         KEEP(*(.image_def))
         *(.text._reset)
         *(.text.main)
