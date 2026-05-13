@@ -73,6 +73,13 @@ When a new driver is hardware-verified, update the row and reference
 the UF2 (and any debug observation — UART log, scope trace, dmesg
 quote) in the commit message.
 
+**Language bridges (T4 verified):**
+
+| Bridge | UF2 | What it proves |
+| ------ | --- | -------------- |
+| C      | `build/hello_c_flash.uf2`    | C→asm AAPCS calls work on real silicon; `_c_runtime_init` zeroes `.bss`; LED toggles at the expected rate driven from `main()` written in C. |
+| Rust   | `build/hello_rust_flash.uf2` | Rust→asm FFI works on `thumbv8m.main-none-eabi`; `librp_asm.a` static archive links cleanly into `no_std` binary; LED toggles at the expected rate driven from `fn main()` written in Rust. |
+
 **Image size:** the M2-default `build/blinky.uf2` (clock bring-up +
 banner + blink) is 728 bytes of `.text`. Every peripheral demo lives in
 `examples/` and builds to its own < 3 KB UF2.
