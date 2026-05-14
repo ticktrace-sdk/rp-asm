@@ -3,11 +3,11 @@
 @
 @ Reads:
 @   CHIPID0..3       (rows 0..3)     64-bit chip-unique identifier
-@   RANDID0..3       (rows 4..7)     64-bit randomly-assigned ID
+@   RANDID0..7       (rows 4..0xb)   128-bit private random identifier
 @   FLASH_DEVINFO    (row 0x54)      info about the on-board flash chip
 @
-@ Prints once per second:
-@   chipid=XXXXXXXX_XXXXXXXX randid=XXXXXXXX_XXXXXXXX flash_devinfo=XXXX
+@ Prints once per second (one line):
+@   chipid=XXXXXXXX_XXXXXXXX randid=XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX flash_devinfo=XXXX
 @
 @ All values are factory-programmed and don't change run-to-run, so
 @ repeated lines should be identical - a basic sanity check that the
@@ -121,21 +121,37 @@ main:
     ldrh    r0, [r0, #0]                          @ CHIPID0
     bl      _put_hex16
 
-    @ ---- RANDID0..3 -----------------------------------------------------
+    @ ---- RANDID0..7 (128 bits, rows 4..11, printed MS-first) -----------
     ldr     r0, =mid_randid
     bl      cdc_puts
-    movs    r0, #(OTP_ROW_RANDID0 + 3)            @ row 7
+    movs    r0, #(OTP_ROW_RANDID0 + 7)            @ row 11 (bits 127..112)
     bl      otp_read_row
     bl      _put_hex16
-    movs    r0, #(OTP_ROW_RANDID0 + 2)            @ row 6
+    movs    r0, #(OTP_ROW_RANDID0 + 6)            @ row 10 (bits 111..96)
     bl      otp_read_row
     bl      _put_hex16
     ldr     r0, =mid_underscore
     bl      cdc_puts
-    movs    r0, #(OTP_ROW_RANDID0 + 1)            @ row 5
+    movs    r0, #(OTP_ROW_RANDID0 + 5)            @ row 9  (bits  95..80)
     bl      otp_read_row
     bl      _put_hex16
-    movs    r0, #OTP_ROW_RANDID0                  @ row 4
+    movs    r0, #(OTP_ROW_RANDID0 + 4)            @ row 8  (bits  79..64)
+    bl      otp_read_row
+    bl      _put_hex16
+    ldr     r0, =mid_underscore
+    bl      cdc_puts
+    movs    r0, #(OTP_ROW_RANDID0 + 3)            @ row 7  (bits  63..48)
+    bl      otp_read_row
+    bl      _put_hex16
+    movs    r0, #(OTP_ROW_RANDID0 + 2)            @ row 6  (bits  47..32)
+    bl      otp_read_row
+    bl      _put_hex16
+    ldr     r0, =mid_underscore
+    bl      cdc_puts
+    movs    r0, #(OTP_ROW_RANDID0 + 1)            @ row 5  (bits  31..16)
+    bl      otp_read_row
+    bl      _put_hex16
+    movs    r0, #OTP_ROW_RANDID0                  @ row 4  (bits  15..0 )
     bl      otp_read_row
     bl      _put_hex16
 
