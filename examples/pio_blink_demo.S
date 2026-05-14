@@ -3,16 +3,21 @@
 @                    program. Demonstrates the M5-I controller API end-to-end.
 @
 @ PIO program (hand-encoded; a Python pioasm is deferred):
-@   instr[0] = SET PINS, 1 [31]      ; 0xFF01
-@   instr[1] = SET PINS, 0 [31]      ; 0xFF00
-@   WRAP_TOP=1, WRAP_BOTTOM=0 so SM loops without a JMP.
+@   instr[0] = SET PINDIRS, 1        ; 0xE081  one-shot: make pin output
+@   instr[1] = SET PINS, 1 [31]      ; 0xFF01
+@   instr[2] = SET PINS, 0 [31]      ; 0xFF00
+@   WRAP_BOTTOM=1, WRAP_TOP=2 so SM loops the two SET PINS forever;
+@   the SET PINDIRS at addr 0 runs once at start.
 @
-@ Each instruction takes (1 + 31) = 32 PIO cycles, so one toggle = 64 PIO
-@ cycles.  With CLKDIV_INT = 0xFFFF and clk_sys = 150 MHz, that's
-@ 64 * 65535 / 150e6 ≈ 28 ms per full cycle (~36 Hz) — easy to capture on a
-@ logic analyser; on real hardware the LED looks dim/solid because it's
-@ above the persistence-of-vision frequency.  Print a banner so the UART
-@ confirms the firmware booted.
+@ Each SET PINS takes (1 + 31) = 32 PIO cycles, so one full cycle = 64
+@ PIO cycles.  With CLKDIV_INT = 0xFFFF and clk_sys = 150 MHz, that's
+@ 64 * 65535 / 150e6 ~= 28 ms per full cycle (~36 Hz).  At that rate the
+@ LED appears dim/solid because it's above the persistence-of-vision
+@ frequency; capture on a logic analyser to see the actual toggle, or
+@ slow the SM down further to make it visibly blink.
+@
+@ Without SET PINDIRS=1 the pad stays input-only after pio_gpio_init
+@ (PIO's pindirs default to 0), and SET PINS has no electrical effect.
 @ =============================================================================
 
     .syntax unified
@@ -20,7 +25,7 @@
     .thumb
 
     .equ LED_PIN, 25
-    .equ PIO_BLINK_LEN, 2
+    .equ PIO_BLINK_LEN, 3
 
     .section .rodata.demo, "a"
     .align 2
@@ -29,8 +34,9 @@ banner:
 
 @ Program instructions stored 1 per 32-bit word; only the low 16 bits matter.
 pio_blink_program:
-    .word 0xFF01            @ SET PINS, 1 [31]
-    .word 0xFF00            @ SET PINS, 0 [31]
+    .word 0xE081            @ 0: SET PINDIRS, 1   one-shot before wrap
+    .word 0xFF01            @ 1: SET PINS, 1 [31]
+    .word 0xFF00            @ 2: SET PINS, 0 [31]
 
     .section .text.main, "ax"
     .thumb_func
@@ -70,11 +76,12 @@ main:
     movs    r3, #0                          @ frac
     bl      pio_sm_set_clkdiv
 
-    @ WRAP: bottom=0, top=1
+    @ WRAP: bottom=1, top=2 -- SET PINDIRS at addr 0 runs once at start,
+    @ then SM loops the two SET PINS instructions forever.
     movs    r0, #0
     movs    r1, #0
-    movs    r2, #0
-    movs    r3, #1
+    movs    r2, #1
+    movs    r3, #2
     bl      pio_sm_set_wrap
 
     @ SET pin range: base=LED_PIN, count=1
