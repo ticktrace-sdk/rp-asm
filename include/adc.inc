@@ -1,9 +1,19 @@
 @ =============================================================================
 @ adc.inc - RP2350 ADC (datasheet §12.4)
 @
-@ 12-bit SAR ADC. RP2350 exposes 8 external inputs (ADC0..7 = GP40..47) plus
-@ an internal temperature sensor on channel 8. clk_adc must be ~48 MHz; M2's
-@ clocks_init sets clk_adc = pll_usb = 48 MHz.
+@ 12-bit SAR ADC. clk_adc must be ~48 MHz; M2's clocks_init sets clk_adc =
+@ pll_usb = 48 MHz.
+@
+@ Input channel mapping is package-dependent (datasheet §12.4):
+@   RP2350A (QFN-60, Pico 2):
+@     0..3 = GP26..29
+@     4    = internal temperature sensor
+@     5..7 = reserved
+@   RP2350B (QFN-80):
+@     0..7 = GP40..47
+@     8    = internal temperature sensor
+@
+@ Use ADC_CH_TEMP below rather than hard-coding 4 or 8 in demos.
 @ =============================================================================
 
     .equ ADC_BASE,        0x400a0000
@@ -38,15 +48,14 @@
     .equ ADC_FCS_EMPTY,       (1 << 8)
     .equ ADC_FCS_FULL,        (1 << 9)
 
-    @ Channel aliases (RP2350: 8 external + temp sensor on chan 8)
-    .equ ADC_CH_GP40,         0
-    .equ ADC_CH_GP41,         1
-    .equ ADC_CH_GP42,         2
-    .equ ADC_CH_GP43,         3
-    .equ ADC_CH_GP44,         4
-    .equ ADC_CH_GP45,         5
-    .equ ADC_CH_GP46,         6
-    .equ ADC_CH_GP47,         7
-    .equ ADC_CH_TEMP,         8
+    @ Channel aliases.  Defaults are for RP2350A (Pico 2, QFN-60):
+    @ 4 external inputs on GP26..29 and the temp sensor on chan 4.
+    @ On RP2350B (QFN-80) the external inputs span GP40..47 and the
+    @ temp sensor is chan 8 - flip the aliases below to match.
+    .equ ADC_CH_GP26,         0
+    .equ ADC_CH_GP27,         1
+    .equ ADC_CH_GP28,         2
+    .equ ADC_CH_GP29,         3
+    .equ ADC_CH_TEMP,         4
 
     .equ DREQ_ADC,            36
