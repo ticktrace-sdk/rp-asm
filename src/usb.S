@@ -155,7 +155,13 @@ cdc_tx_head:            .word 0
     .global  cdc_tx_tail
 cdc_tx_tail:            .word 0
 
-    .equ CDC_RING_SIZE, 64
+    @ Ring must be larger than any single logical write the firmware emits,
+    @ because cdc_putc drops bytes when the ring is full (no back-pressure).
+    @ A 64-byte EP1 IN packet may be in flight (cdc_in_busy=1) while the
+    @ next cdc_puts queues a new line; with a 64-byte ring, multi-field
+    @ status lines (e.g. otp_usb_demo) truncate.  256 absorbs one in-flight
+    @ packet plus a 192-byte log line.
+    .equ CDC_RING_SIZE, 256
     .equ CDC_RING_MASK, (CDC_RING_SIZE - 1)
 
 @ ----------------------------------------------------------------------------
