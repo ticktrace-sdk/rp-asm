@@ -93,6 +93,7 @@ Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 | `docs/sched_stats.md`| Opt-in per-task DWT cycle accounting — task_create_traced + getters |
 | `docs/c_bridge.md`   | Opt-in C bridge: write apps in C, drivers stay asm (branch `claude/c-rust-bridge`) |
 | `docs/rust_bridge.md`| Opt-in Rust bridge: `no_std` Rust apps via `rp-asm-sys` crate (same branch) |
+| `docs/rust_ecosystem.md`| embedded-hal 1.0 trait impls in `rp-asm-hal` — use any crates.io driver crate over our asm core (same branch) |
 
 **New here?** Read `docs/apps.md` first — it walks you through writing
 your first app top-to-bottom. Then `docs/calling.md` for the formal

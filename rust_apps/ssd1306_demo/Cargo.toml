@@ -1,0 +1,27 @@
+[package]
+name = "ssd1306_demo"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "ssd1306_demo"
+path = "src/main.rs"
+
+[dependencies]
+rp-asm-sys = { path = "../../rust_bridge/rp-asm-sys" }
+rp-asm-hal = { path = "../../rust_bridge/rp-asm-hal" }
+rp-asm-rt  = { path = "../../rust_bridge/rp-asm-rt" }
+
+# Direct ecosystem deps: the traits we use, then the drivers themselves.
+embedded-hal        = "1.0"
+ssd1306             = "0.9"
+embedded-graphics   = "0.8"
+
+[profile.release]
+opt-level    = "s"
+lto          = true
+codegen-units = 1
+panic        = "abort"
+debug        = false
+strip        = true
