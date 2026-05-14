@@ -10,6 +10,13 @@
 @   - exercising the v0.1 MMIO write trace under T1 (tests/unicorn/test_v01_blinky.py)
 @   - confirming the existing 12 MHz UART driver still works without M2's
 @     clock-tree bring-up
+@
+@ NOT FOR REAL HARDWARE: on a flash-booted board this image hangs in
+@ uart0_init because UART0's RESET_DONE never asserts without clk_peri
+@ being brought up by clocks_init (see src/uart.S near "RESET_DONE
+@ won't assert there because clk_peri isn't running yet").  The hang
+@ happens before the LED toggle loop, so the LED does not blink.
+@ Test on hardware with blinky.uf2 (src/main.S) instead.
 @ =============================================================================
 
     .syntax unified
