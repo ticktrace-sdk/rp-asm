@@ -25,6 +25,15 @@ commands:
   uf2 pack <input.bin> <base_addr> <output.uf2>
       Pack a raw binary into a UF2 image.
 
+  mkmanifest <input.bin> -o <output.footer.bin> [-status ...] [-seq N]
+      Compute a 256-byte slot footer (magic, CRC32, SHA-256) over the
+      input. Used by the bootloader build to seal SSBL/TSBL/app slots.
+
+  mkfirmware -o <output.uf2> <addr>:<bin> [<addr>:<bin> ...]
+      Concatenate multiple binaries (each at its load address) into a
+      single UF2 image. Used to produce one-drag factory firmware
+      (SSBL + TSBL + app + footers).
+
   help
       Show this message.
 `
@@ -37,6 +46,10 @@ func main() {
 	switch os.Args[1] {
 	case "uf2":
 		os.Exit(uf2Cmd(os.Args[2:]))
+	case "mkmanifest":
+		os.Exit(mkmanifestCmd(os.Args[2:]))
+	case "mkfirmware":
+		os.Exit(mkfirmwareCmd(os.Args[2:]))
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 	default:
