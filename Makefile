@@ -90,10 +90,29 @@ BENCH_SRC := $(filter-out benchmarks/rp_asm/bench_lib.S, $(wildcard benchmarks/r
 BENCH_UF2 := $(patsubst benchmarks/rp_asm/%.S, build/%.uf2, $(BENCH_SRC))
 BENCH_ELF := $(patsubst benchmarks/rp_asm/%.S, build/%.elf, $(BENCH_SRC))
 
-.PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-all pydeps
+.PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-tools test-all pydeps tools
 .PRECIOUS: build/%.elf build/%.bin build/%_flash.elf build/%_flash.bin \
            build/%_signed_flash.bin build/%_encrypted_flash.elf
 all: $(TARGET).uf2
+
+# ============================================================================
+# Go tools — `rpasm` static binary, replacement for the Python helpers.
+# Phase 1a (this commit) ships `rpasm uf2 pack` at byte-parity with
+# tools/uf2.py. Phase 1b adds mkmanifest, mkfirmware. Phase 3 adds dfu.
+# ============================================================================
+GO     ?= go
+RPASM  := tools/bin/rpasm
+GO_SRC := $(shell find tools -name '*.go' -not -path 'tools/bin/*' 2>/dev/null)
+
+$(RPASM): $(GO_SRC) tools/go.mod
+	@cd tools && $(GO) build -o bin/rpasm ./cmd/rpasm
+	@echo "  GO      $@"
+
+tools: $(RPASM)
+
+# The Python uf2.py is still the default packer until Phase 1b. The Go tool
+# is built alongside it and exercised by tests/tools/test_uf2_parity.py so
+# any divergence is caught before we flip the Makefile rules over.
 
 examples: $(EXAMPLE_UF2)
 
@@ -381,15 +400,24 @@ test-t3: $(TARGET).elf
 	@bash tests/renode/run.sh
 	@echo "DONE: T3"
 
-test: test-t1 test-t2
+test-tools: $(RPASM)
+	@echo "==== Go tools: unit tests ===="
+	@cd tools && $(GO) test ./...
+	@echo "==== Go tools: uf2 parity vs tools/uf2.py ===="
+	@$(PYTEST) tests/tools
+	@echo "PASS: test-tools"
+
+test: test-t1 test-t2 test-tools
 	@echo ""
 	@echo "==== make test summary ===="
 	@echo "  T1 (Unicorn): PASS"
 	@echo "  T2 (QEMU):    PASS"
+	@echo "  tools:        PASS"
 
-test-all: test-t1 test-t2 test-t3
+test-all: test-t1 test-t2 test-t3 test-tools
 	@echo ""
 	@echo "==== make test-all summary ===="
 	@echo "  T1 (Unicorn): PASS"
 	@echo "  T2 (QEMU):    PASS"
 	@echo "  T3 (Renode):  see above (PASS or SKIP)"
+	@echo "  tools:        PASS"
