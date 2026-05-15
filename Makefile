@@ -68,6 +68,10 @@ DRIVER_SRC += src/otp.S
 # datasheet sec 4.3 - we expose only the register-block constants in
 # include/bootram.inc; no driver.
 DRIVER_SRC += src/bootrom.S
+# --- App-side boot-API helpers (boot_confirm / boot_request_dfu /
+#     boot_request_bootsel). Tiny and gc-sectioned out of apps that
+#     don't call them, so always-on is the right default.
+DRIVER_SRC += src/boot_api.S
 # Scheduler depends on nvic.S helpers; sched-using examples must
 # `.include "src/nvic.S"` themselves (matches the pattern other examples
 # use for timer.S / systick.S etc).
@@ -360,6 +364,28 @@ build/firmware_%_ab.uf2: \
 	    0x1007FF00:build/$*_app.seqA.footer.bin \
 	    0x10080000:build/$*_app_slotB.bin \
 	    0x100F7F00:build/$*_app_slotB.seqB.footer.bin
+	@echo "  UF2     $@"
+
+# --- Rollback demo: slot A = confirmed (good), slot B = buggy (no confirm) -
+# Drag-droppable proof that the -ab rollback works on real silicon. Cold
+# boot -> slot B blinks fast for 3 s, watchdog reset -> TSBL rolls back to
+# slot A which blinks slow forever. Pull USB and re-plug to repeat.
+build/firmware_rollback_demo.uf2: \
+        build/ssbl.bin \
+        build/tsbl_ab.bin build/tsbl_ab.footer.bin \
+        build/blinky_confirmed_demo_app.bin \
+        build/blinky_confirmed_demo_app.seqA.footer.bin \
+        build/blinky_buggy_demo_app_slotB.bin \
+        build/blinky_buggy_demo_app_slotB.seqB.footer.bin \
+        $(RPASM)
+	@$(RPASM) mkfirmware -o $@ \
+	    0x10000000:build/ssbl.bin \
+	    0x10001000:build/tsbl_ab.bin \
+	    0x10006F00:build/tsbl_ab.footer.bin \
+	    0x10008000:build/blinky_confirmed_demo_app.bin \
+	    0x1007FF00:build/blinky_confirmed_demo_app.seqA.footer.bin \
+	    0x10080000:build/blinky_buggy_demo_app_slotB.bin \
+	    0x100F7F00:build/blinky_buggy_demo_app_slotB.seqB.footer.bin
 	@echo "  UF2     $@"
 
 .PHONY: bootloader
