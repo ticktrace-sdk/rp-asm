@@ -91,7 +91,8 @@ BENCH_UF2 := $(patsubst benchmarks/rp_asm/%.S, build/%.uf2, $(BENCH_SRC))
 BENCH_ELF := $(patsubst benchmarks/rp_asm/%.S, build/%.elf, $(BENCH_SRC))
 
 .PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-all pydeps
-.PRECIOUS: build/%.elf build/%.bin build/%_flash.elf build/%_flash.bin
+.PRECIOUS: build/%.elf build/%.bin build/%_flash.elf build/%_flash.bin \
+           build/%_signed_flash.bin build/%_encrypted_flash.elf
 all: $(TARGET).uf2
 
 examples: $(EXAMPLE_UF2)
@@ -235,6 +236,74 @@ build/%_flash.bin: build/%_flash.elf
 build/%_flash.uf2: build/%_flash.bin tools/uf2.py
 	@python3 tools/uf2.py $< $(FLASH_LOAD_ADDR) $@
 	@echo "  UF2     $@"
+
+# -------------------------------------------------------------- secure boot
+# M8: signed (M8.1) and encrypted+signed (M8.2) image flows.  Picotool does
+# all the crypto - we just wire up the keygen, seal/encrypt invocation, and
+# a UF2 pack of the sealed binary.  M8.1 produces a flash-bootable signed
+# UF2 on any stock RP2350.  M8.2 produces a correctly built encrypted UF2
+# but flashing it requires the AES key in OTP first - see the note above
+# the encrypted target below.
+#
+# Override PICOTOOL on the command line or env if your picotool is elsewhere:
+#   make build/blinky_signed_flash.uf2 PICOTOOL=/usr/local/bin/picotool
+PICOTOOL ?= $(HOME)/picotool/build/picotool
+KEYS_DIR := keys/dev
+PRIVATE_PEM := $(KEYS_DIR)/private.pem
+AES_KEY := $(KEYS_DIR)/privateaes.bin
+IV_SALT := $(KEYS_DIR)/ivsalt.bin
+
+# keygen.sh is idempotent: re-running it leaves existing keys alone.
+$(PRIVATE_PEM) $(AES_KEY) $(IV_SALT): tools/keygen.sh
+	@./tools/keygen.sh
+
+# ----- Signed only (no encryption) -------------------------------------------
+# Pattern: build/<name>_signed_flash.uf2 <- build/<name>_flash.bin + dev key.
+# picotool seal needs the load offset for a BIN input and an OTP scratch
+# JSON; we steer it into build/ so a `make clean` removes it.
+build/%_signed_flash.bin: build/%_flash.bin $(PRIVATE_PEM)
+	@$(PICOTOOL) seal --quiet --hash --sign \
+	    $< -t bin -o $(FLASH_LOAD_ADDR) \
+	    $@ -t bin \
+	    $(PRIVATE_PEM) build/$*_signed_otp.json
+	@echo "  SEAL    $@"
+
+build/%_signed_flash.uf2: build/%_signed_flash.bin tools/uf2.py
+	@python3 tools/uf2.py $< $(FLASH_LOAD_ADDR) $@
+	@echo "  UF2     $@"
+
+# ----- Encrypted + signed ----------------------------------------------------
+# picotool encrypt --embed includes a small decryptor bootloader stub in the
+# output ELF and re-targets it for SRAM (0x20000000) - the stub runs from
+# SRAM, decrypts the payload, verifies the signature, then jumps.  Because
+# the ELF is no longer a plain XIP image we let picotool produce the UF2
+# directly (its own `uf2 convert` knows the layout); our tools/uf2.py
+# assumes a single contiguous load region and would not handle the layout.
+#
+# NOT FLASHABLE ON A STOCK CHIP.  The embedded decryptor stub (picotool's
+# enc_bootloader/enc_bootloader.c) reads the AES key from OTP unconditionally
+# (key shares at pages 29 & 30, IV salt at page 31).  Blank OTP -> guarded
+# read faults -> rom_chain_image rejects the image -> chip drops back to
+# BOOTSEL.  There is no flash-resident-key dev mode in the bootrom-chain
+# decryptor.  To actually run an encrypted image you must `picotool otp load
+# build/<name>_encrypted_otp.json` first - that burn is per-chip and partly
+# irreversible (PAGE2{9,30,31}_LOCK1 = 0x3d3d3d).  The build path here is
+# kept so the keygen + picotool plumbing is exercised and the OTP json is
+# produced for a future provisioning step; flash the M8.1 signed UF2 for
+# hardware tests in the meantime.
+build/%_encrypted_flash.elf: build/%_flash.elf $(PRIVATE_PEM) $(AES_KEY) $(IV_SALT)
+	@$(PICOTOOL) encrypt --quiet --embed --hash --sign \
+	    $< -t elf \
+	    $@ -t elf \
+	    $(AES_KEY) $(IV_SALT) $(PRIVATE_PEM) build/$*_encrypted_otp.json
+	@echo "  ENC     $@"
+
+build/%_encrypted_flash.uf2: build/%_encrypted_flash.elf
+	@$(PICOTOOL) uf2 convert --quiet $< -t elf $@ -t uf2 --family rp2350-arm-s
+	@echo "  UF2     $@"
+
+.PHONY: keys
+keys: $(PRIVATE_PEM) $(AES_KEY) $(IV_SALT)
 
 
 # -------------------------------------------------------------- benchmarks
