@@ -30,7 +30,7 @@ SECTIONS
     .text 0x20000000 : ALIGN(4)
     {
         KEEP(*(.vectors))
-        . = 0x40;                       /* park IMAGE_DEF at a known offset */
+        . = 0x180;                      /* park IMAGE_DEF past 68-entry vectors */
         KEEP(*(.image_def))
         *(.text._reset)
         *(.text.main)
@@ -44,6 +44,18 @@ SECTIONS
         *(.data*)
         . = ALIGN(4);
     } > SRAM
+
+    /* SRAM-resident image: .ramfunc has the same VMA and LMA - no copy
+       needed.  Still bracket it with the load symbols so startup.S can
+       call its copy loop unconditionally. */
+    .ramfunc : ALIGN(4)
+    {
+        __ramfunc_start__ = .;
+        *(.ramfunc*)
+        . = ALIGN(4);
+        __ramfunc_end__ = .;
+    } > SRAM
+    __ramfunc_load__ = __ramfunc_start__;
 
     .bss (NOLOAD) : ALIGN(4)
     {

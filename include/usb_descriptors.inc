@@ -81,8 +81,8 @@
 @   VID 0x2E8A is Raspberry Pi; PID 0x000A is the unallocated test PID we
 @   use across all rp-asm CDC examples.  Hosts will see a unique enumeration
 @   based on these.
-    .equ USB_VID,                     0x2E8A
-    .equ USB_PID,                     0x000A
+    .equ USB_VID,                     0x2E8A     @ Raspberry Pi (Trading) Ltd
+    .equ USB_PID,                     0x10EE     @ Amken's allotted PID
     .equ USB_BCD_DEVICE,              0x0001
 
 @ ---- Descriptor sizes (used in headers + total config length) --------------
@@ -115,9 +115,14 @@ usb_device_descriptor:
     .byte   USB_DESC_LEN_DEVICE        @ bLength
     .byte   USB_DESC_DEVICE            @ bDescriptorType
     .short  0x0200                     @ bcdUSB = 2.00
-    .byte   USB_CLASS_MISC             @ bDeviceClass = MISC + IAD subclass
-    .byte   0x02                       @ bDeviceSubClass = common
-    .byte   0x01                       @ bDeviceProtocol = IAD
+    @ Single-function CDC-ACM: declare CDC at the device level so the host
+    @ doesn't expect an Interface Association Descriptor (IAD).  We were
+    @ previously setting MISC/0x02/0x01 (the IAD signaling triple) without
+    @ actually emitting an IAD in the config, which caused Linux to retry
+    @ enumeration with several-second backoff (~5s end-to-end).
+    .byte   USB_CLASS_CDC              @ bDeviceClass = CDC (0x02)
+    .byte   USB_CDC_SUBCLASS_ACM       @ bDeviceSubClass = ACM (0x02)
+    .byte   USB_CDC_PROTOCOL_NONE      @ bDeviceProtocol = none (0x00)
     .byte   USB_EP0_MAX_PACKET         @ bMaxPacketSize0 = 64
     .short  USB_VID                    @ idVendor
     .short  USB_PID                    @ idProduct

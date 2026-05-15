@@ -5,6 +5,7 @@
 ##   make clean
 ##
 ## Test targets (see tests/README.md for the full strategy):
+##   make pydeps        create .venv and install Python deps for T1/T2
 ##   make test          T1 + T2 (Unicorn + QEMU)
 ##   make test-t1       Unicorn host harness
 ##   make test-t2       QEMU semihosting sanity / ISA cases
@@ -57,6 +58,16 @@ DRIVER_SRC += src/sched.S
 DRIVER_SRC += src/spsc.S
 # --- Per-task DWT cycle accounting (opt-in via task_create_traced).
 DRIVER_SRC += src/sched_stats.S
+# --- M7 (QMI) additive append - flash speed tuning.
+DRIVER_SRC += src/qmi.S
+# --- M7 (OTP) additive append - read-only access to factory + user rows.
+DRIVER_SRC += src/otp.S
+# --- M7 (bootrom services) additive append.  bootrom.S provides
+# rom_reset_to_bootsel, which the USB CDC stack also invokes on the
+# 1200-baud reboot trick.  BOOTRAM itself is bootrom-owned per RP2350
+# datasheet sec 4.3 - we expose only the register-block constants in
+# include/bootram.inc; no driver.
+DRIVER_SRC += src/bootrom.S
 # Scheduler depends on nvic.S helpers; sched-using examples must
 # `.include "src/nvic.S"` themselves (matches the pattern other examples
 # use for timer.S / systick.S etc).
@@ -79,8 +90,8 @@ BENCH_SRC := $(filter-out benchmarks/rp_asm/bench_lib.S, $(wildcard benchmarks/r
 BENCH_UF2 := $(patsubst benchmarks/rp_asm/%.S, build/%.uf2, $(BENCH_SRC))
 BENCH_ELF := $(patsubst benchmarks/rp_asm/%.S, build/%.elf, $(BENCH_SRC))
 
-.PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-all
-.PRECIOUS: build/%.elf build/%.bin
+.PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-all pydeps
+.PRECIOUS: build/%.elf build/%.bin build/%_flash.elf build/%_flash.bin
 all: $(TARGET).uf2
 
 examples: $(EXAMPLE_UF2)
@@ -149,6 +160,23 @@ build/%.elf: rust_apps/%/Cargo.toml build/librp_asm.a
 	@cp rust_apps/$*/target/thumbv8m.main-none-eabi/release/$* $@
 	@$(SIZE) $@
 
+# -------------------------------------------------------------- flash bridges
+# Same C / Rust apps but linked at 0x10000000 for real-hardware boot.
+# Uses link/flash.ld; otherwise identical to the SRAM rules above.
+build/%_flash.elf: c_apps/%/main.c $(DRIVER_OBJ) $(C_BRIDGE_OBJ) link/flash.ld
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -c $< -o build/$*.c.o
+	@$(LD) -T link/flash.ld -nostdlib --gc-sections -Map=build/$*_flash.map -o $@ \
+	    $(DRIVER_OBJ) $(C_BRIDGE_OBJ) build/$*.c.o
+	@$(SIZE) $@
+
+build/%_flash.elf: rust_apps/%/Cargo.toml build/librp_asm.a
+	@mkdir -p $(@D)
+	@cd rust_apps/$* && RP_ASM_LINK_SCRIPT=$(abspath link/flash.ld) \
+	    CARGO_TARGET_DIR=target_flash cargo build --release --quiet
+	@cp rust_apps/$*/target_flash/thumbv8m.main-none-eabi/release/$* $@
+	@$(SIZE) $@
+
 # -------------------------------------------------------------- main image
 $(TARGET).uf2: $(TARGET).bin tools/uf2.py
 	@python3 tools/uf2.py $< $(LOAD_ADDR) $@
@@ -179,6 +207,35 @@ build/%.bin: build/%.elf
 build/%.uf2: build/%.bin tools/uf2.py
 	@python3 tools/uf2.py $< $(LOAD_ADDR) $@
 	@echo "  UF2     $@"
+
+# -------------------------------------------------------------- flash variants
+# Default `blinky` is built from src/main.S; build/blinky_flash.uf2 produces
+# the same image linked at 0x10000000 for hardware boot.
+build/blinky_flash.elf: $(OBJ) link/flash.ld
+	@mkdir -p $(@D)
+	@$(LD) -T link/flash.ld -nostdlib --gc-sections -Map=build/blinky_flash.map -o $@ $(OBJ)
+	@$(SIZE) $@
+
+# Same source(s) as the SRAM image, but linked at 0x10000000 (XIP window).
+# Use these when targeting real hardware via BOOTSEL UF2 - SRAM-resident
+# images currently do not run reliably on the RP2350-A2 silicon shipping in
+# Pico 2 boards (the bootrom hands off but the core never reaches main).
+FLASH_LOAD_ADDR := 0x10000000
+
+build/%_flash.elf: examples/%.S $(DRIVER_OBJ) link/flash.ld
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o build/$*.example.o $<
+	@$(LD) -T link/flash.ld -nostdlib --gc-sections -Map=build/$*_flash.map -o $@ $(DRIVER_OBJ) build/$*.example.o
+	@$(SIZE) $@
+
+build/%_flash.bin: build/%_flash.elf
+	@$(OBJCOPY) -O binary $< $@
+	@echo "  BIN     $@"
+
+build/%_flash.uf2: build/%_flash.bin tools/uf2.py
+	@python3 tools/uf2.py $< $(FLASH_LOAD_ADDR) $@
+	@echo "  UF2     $@"
+
 
 # -------------------------------------------------------------- benchmarks
 # Like examples, but: (a) link in benchmarks/rp_asm/bench_lib.S, (b) bench
@@ -222,7 +279,23 @@ clean:
 # them and exit non-zero on the first failure (set -e).  We deliberately do
 # NOT wrap pytest in `|| true` so a regression breaks the build.
 
-PYTEST ?= python3 -m pytest -q
+# Prefer .venv if it exists so `make test-*` picks up deps installed via
+# `make pydeps`; otherwise fall back to the system python3.
+VENV         := .venv
+VENV_PY      := $(VENV)/bin/python
+PY           := $(if $(wildcard $(VENV_PY)),$(VENV_PY),python3)
+PYTEST       ?= $(PY) -m pytest -q
+
+# pydeps: create .venv (if missing) and install Python test deps.
+pydeps: $(VENV_PY)
+	@echo "==== installing Python test deps into $(VENV) ===="
+	@$(VENV_PY) -m pip install --quiet --upgrade pip
+	@$(VENV_PY) -m pip install --quiet -r tests/unicorn/requirements.txt
+	@echo "PASS: pydeps  ($$($(VENV_PY) -c "import unicorn; print('unicorn', unicorn.__version__)"))"
+
+$(VENV_PY):
+	@echo "==== creating venv at $(VENV) ===="
+	@python3 -m venv $(VENV)
 
 test-t1: $(TARGET).elf $(EXAMPLE_UF2)
 	@echo "==== T1 (Unicorn host harness) ===="

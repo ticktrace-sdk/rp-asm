@@ -54,17 +54,20 @@ SIO_GPIO_OUT_XOR = SIO_BASE + 0x028
 SIO_GPIO_OE_SET  = SIO_BASE + 0x038
 UART0_BASE = 0x40070000
 
-SCB_VTOR = 0xE000ED08
+SCB_VTOR  = 0xE000ED08
+SCB_CPACR = 0xE000ED88                       # M33 RCP enable, hardware-only
 
-PERIPHERAL_RESET_MASK = (1 << 6) | (1 << 9) | (1 << 26)
+PERIPHERAL_RESET_MASK = (1 << 6) | (1 << 9)   # io_bank0 + pads_bank0
+                                              # uart0 now released by uart0_init
+UART0_RESET_MASK      = 1 << 26               # what uart0_init clears
 LED_BIT = 1 << 25
 PADS_ISO_OD = (1 << 8) | (1 << 7)            # 0x180
 
 
 def _peripheral_writes(events):
-    """Filter out the SCB_VTOR write done by startup.S - it targets the
-    PPB at 0xE000ED08, not a peripheral on the APB."""
-    return [w for w in events if w.addr != SCB_VTOR]
+    """Filter out PPB system-control writes done by startup.S (CPACR, VTOR) -
+    they target the PPB at 0xE000Exxx, not a peripheral on the APB."""
+    return [w for w in events if w.addr not in (SCB_VTOR, SCB_CPACR)]
 
 
 def _need_elf():
@@ -90,17 +93,19 @@ def sim():
 
 def test_reset_clears_correct_peripherals(sim: RP2350Sim):
     """startup.S: first peripheral write must be RESETS_RESET CLR with our mask.
-    (The actual *first* MMIO write is to SCB_VTOR; we ignore that here.)"""
+    Ignores the PPB-side bring-up writes (CPACR for the M33 RCP coprocessor,
+    then VTOR) that _reset emits before touching any APB peripheral."""
     # Run just past the RESETS spin loop and into main.  `main` is at a known
     # symbol so we use that as the breakpoint.
     sim.run_until_pc(sim.symbol("main"))
 
     assert sim.writes, "no MMIO writes observed - did the harness even run?"
 
-    # VTOR comes first
-    vtor = sim.writes[0]
-    assert vtor.addr == SCB_VTOR, (
-        f"first write should be VTOR setup, got {vtor.addr:#x}")
+    # PPB system-control writes precede the peripheral bring-up: CPACR
+    # (enable CP7 / RCP) and VTOR.  Allow either order, but require both.
+    ppb_addrs = {w.addr for w in sim.writes if w.addr in (SCB_VTOR, SCB_CPACR)}
+    assert SCB_VTOR in ppb_addrs, "missing VTOR write in startup"
+    assert SCB_CPACR in ppb_addrs, "missing CPACR (RCP enable) write in startup"
 
     # First peripheral access is the reset clear
     periph = _peripheral_writes(sim.writes)
@@ -143,11 +148,12 @@ def test_blinky_full_init_sequence_then_first_toggle(sim: RP2350Sim):
     ]
 
     expected_prefix = [
-        (RESETS_RESET_CLR,      PERIPHERAL_RESET_MASK),  # 1
-        (PADS_BANK0_GPIO25_CLR, 0x180),                  # 2
+        (RESETS_RESET_CLR,      PERIPHERAL_RESET_MASK),  # 1 (startup.S _reset)
+        (PADS_BANK0_GPIO25_CLR, 0x180),                  # 2 (gpio_led_init)
         (IO_BANK0_GPIO25_CTRL,  5),                      # 3
         (SIO_GPIO_OUT_CLR,      LED_BIT),                # drive low
         (SIO_GPIO_OE_SET,       LED_BIT),                # 4 (OE)
+        (RESETS_RESET_CLR,      UART0_RESET_MASK),       # 5 (uart0_init releases UART0)
         (PADS_BANK0_GPIO0_CLR,  0x180),                  # uart pads
         (PADS_BANK0_GPIO1_CLR,  0x180),
         (IO_BANK0_GPIO0_CTRL,   2),

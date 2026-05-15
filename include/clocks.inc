@@ -161,14 +161,15 @@
     .equ WATCHDOG_REASON,       0x08
     .equ WATCHDOG_SCRATCH0,     0x0C
 
-    @ WATCHDOG_CTRL:
-    @   [23:0]  TIME      countdown in ticks of the WDG TICK (1 us)
-    @   [29]    PAUSE_DBG1
-    @   [30]    PAUSE_DBG0
-    @   [30]    PAUSE_JTAG  (the three PAUSE bits live around bit 24..26 in
-    @                       practice; for our use we only flip ENABLE)
-    @   [31]    ENABLE
-    .equ WATCHDOG_CTRL_ENABLE,  (1 << 31)
+    @ WATCHDOG_CTRL (RP2350 datasheet sec 12.9):
+    @   [23:0]  TIME         countdown in ticks of the WDG TICK (1 us, RO)
+    @   [24]    PAUSE_JTAG
+    @   [25]    PAUSE_DBG0
+    @   [26]    PAUSE_DBG1
+    @   [30]    ENABLE       when not enabled the watchdog timer is paused
+    @   [31]    TRIGGER      writing 1 triggers an immediate watchdog reset
+    .equ WATCHDOG_CTRL_ENABLE,  (1 << 30)
+    .equ WATCHDOG_CTRL_TRIGGER, (1 << 31)
     .equ WATCHDOG_TICK_HZ,      1000000   @ tick is 1 MHz, so TIME in microseconds
 
 @ ----- POWMAN (datasheet sec 6.5) --------------------------------------------

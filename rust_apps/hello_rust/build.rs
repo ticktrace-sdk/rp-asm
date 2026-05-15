@@ -13,7 +13,14 @@ fn main() {
         .expect("expected rust_apps/<name>/ to be 2 levels under repo root")
         .to_path_buf();
     let build_dir = repo_root.join("build");
-    let link_script = repo_root.join("link").join("sram.ld");
+    // Allow the Makefile (or anyone else) to override the linker script
+    // via RP_ASM_LINK_SCRIPT.  Default = SRAM-resident, matches the
+    // historical behaviour.
+    let link_script = match env::var("RP_ASM_LINK_SCRIPT") {
+        Ok(path) => PathBuf::from(path),
+        Err(_) => repo_root.join("link").join("sram.ld"),
+    };
+    println!("cargo:rerun-if-env-changed=RP_ASM_LINK_SCRIPT");
 
     // The Makefile target rust-apps depends on build/librp_asm.a, but cargo
     // can also be invoked directly.  Emit a rerun hint so changes to the

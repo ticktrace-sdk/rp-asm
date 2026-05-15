@@ -125,6 +125,10 @@ def test_uart0_init_v01_trace_prefix(fixture_elf):
     PADS = 0x40038000
     IO = 0x40028000
     expected = [
+        # uart0_init now releases UART0 from reset itself - startup.S _reset
+        # only deals with io_bank0/pads_bank0 (uart0's RESET_DONE won't
+        # assert there because clk_peri isn't running yet).
+        (RESETS_RESET_CLR, 1 << 26),
         (PADS + ATOMIC_CLR + 4 + 0 * 4, 0x180),
         (PADS + ATOMIC_CLR + 4 + 1 * 4, 0x180),
         (IO + 4 + 0 * 8, 2),

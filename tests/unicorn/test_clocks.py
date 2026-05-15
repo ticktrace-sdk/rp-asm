@@ -250,12 +250,13 @@ def test_tick_generators_started(sim):
 
 
 def test_watchdog_left_disabled(sim):
-    """watchdog_disable must clear ENABLE via the atomic CLR alias."""
+    """watchdog_disable must clear ENABLE (bit 30) via the atomic CLR alias.
+    Bit 31 is TRIGGER (write-1 = immediate reset), not ENABLE."""
     sim.run_until_write(SIO_GPIO_OUT_XOR)
     wdg_clr = _writes_to(sim, WATCHDOG_BASE + 0x3000 + 0x00)
     assert wdg_clr, "watchdog_disable never wrote CTRL CLR"
-    assert wdg_clr[-1].value & (1 << 31), (
-        f"watchdog CTRL CLR didn't include ENABLE bit: {wdg_clr}")
+    assert wdg_clr[-1].value & (1 << 30), (
+        f"watchdog CTRL CLR didn't include ENABLE bit (30): {wdg_clr}")
 
 
 # -----------------------------------------------------------------------------

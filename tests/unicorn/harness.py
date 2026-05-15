@@ -151,13 +151,39 @@ class RP2350Sim:
 
     # ---------------------------------------------------------------- loaders
 
+    # 32-bit Thumb instructions that real RP2350 silicon needs in _reset
+    # but Unicorn (no Cortex-M33 RCP coprocessor / MSPLIM modelling) faults
+    # on.  We NOP them out at load time so T1 keeps emulating cleanly while
+    # startup.S stays correct for hardware.  Bytes are little-endian as they
+    # appear in the flat .bin.
+    _HW_ONLY_INSNS = (
+        b"\x30\xee\x10\xf7",   # mrc   p7, #1, APSR_nzcv, c0, c0, #0
+        b"\x40\xec\x80\x07",   # mcrr  p7, #8, r0, r0, c0
+        b"\x40\xec\x81\x07",   # mcrr  p7, #8, r0, r0, c1
+        b"\x80\xf3\x0a\x88",   # msr   MSPLIM, r0
+    )
+    _DOUBLE_NOP = b"\x00\xbf\x00\xbf"
+
+    def _patch_hw_only_insns(self, base: int, blob: bytes) -> bytes:
+        """Replace M33 RCP / MSPLIM instructions with NOPs in `blob`."""
+        out = bytearray(blob)
+        for needle in self._HW_ONLY_INSNS:
+            off = 0
+            while True:
+                idx = out.find(needle, off)
+                if idx < 0:
+                    break
+                out[idx:idx + 4] = self._DOUBLE_NOP
+                off = idx + 4
+        return bytes(out)
+
     def load_bin(self, path: str, base: int = SRAM_BASE) -> None:
         """Load a flat binary at `base`.  Reads vec[0]/vec[1] for SP/PC."""
         with open(path, "rb") as f:
             blob = f.read()
         if base + len(blob) > SRAM_BASE + SRAM_SIZE:
             raise ValueError(f"binary {path} ({len(blob)} B) overruns SRAM")
-        self.uc.mem_write(base, blob)
+        self.uc.mem_write(base, self._patch_hw_only_insns(base, blob))
         self._set_initial_sp_pc(base)
 
     def load_elf(self, path: str) -> None:
@@ -193,7 +219,7 @@ class RP2350Sim:
                 data = seg.data()
                 if not data:
                     continue
-                self.uc.mem_write(pa, data)
+                self.uc.mem_write(pa, self._patch_hw_only_insns(pa, data))
 
         # Vector table must live at the start of SRAM in our linker layout
         self._set_initial_sp_pc(SRAM_BASE)

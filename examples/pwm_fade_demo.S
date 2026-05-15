@@ -1,12 +1,18 @@
 @ =============================================================================
-@ examples/pwm_fade_demo.S - 4-second triangle fade on GP15 (slice 7, ch B).
+@ examples/pwm_fade_demo.S - 4-second triangle fade on GP25 (on-board LED,
+@                            slice 4 ch B).
 @
-@ Why GP15: on the RP2350 PWM mapping
+@ On the RP2350 PWM mapping
 @     slice = ((pin >> 1) & 7) | ((pin >> 4) & 8)
 @     chan  = pin & 1
-@   GP15 -> slice 7, channel B.  Pin available on the Pico 2 header.
-@   GP25 (the on-board LED) maps to slice 4 ch B and is driven by gpio_led_*
-@   from src/gpio.S; we leave that pin untouched here.
+@   GP25 -> slice 4, channel B.  This is the Pico 2 on-board LED, so the
+@   fade is visible without any external wiring.
+@
+@ Note: pwm_set_gpio_function(25) switches GP25's funcsel from SIO to PWM,
+@ so gpio_led_init / gpio_led_toggle from src/gpio.S no longer affect this
+@ pin after the demo configures it.  That is intentional - the PWM owns
+@ the pin for the duration of the demo.  Earlier versions of this file
+@ targeted GP15 (slice 7B) for the same fade but required a wired LED.
 @
 @ At clk_sys = 150 MHz we want a fade fast enough to look smooth (~250 Hz
 @ refresh) but with enough resolution that a single LSB step is invisible:
@@ -18,8 +24,8 @@
 @ duty cycle one notch every ~20 ms, sweeping up then back down.
 @
 @ Build:    make build/pwm_fade_demo.uf2
-@ Verify:   115200 8N1 prints "pwm fade demo @ GP15 (slice 7B)\r\n" once;
-@           GP15 fades in/out forever.
+@ Verify:   115200 8N1 prints "pwm fade demo @ GP25 (slice 4B)\r\n" once;
+@           on-board LED fades in/out forever (~4 s period).
 @ =============================================================================
 
     .syntax unified
@@ -29,9 +35,9 @@
     @ Pull in the PWM driver (cwd is repo root when make calls us).
     .include "src/pwm.S"
 
-    .equ FADE_PIN,          15
-    .equ FADE_SLICE,        PWM_SLICE_FOR_GP15      @ = 7
-    .equ FADE_CHAN,         PWM_CHAN_FOR_GP15       @ = 1 (B)
+    .equ FADE_PIN,          25
+    .equ FADE_SLICE,        PWM_SLICE_FOR_GP25      @ = 4
+    .equ FADE_CHAN,         PWM_CHAN_FOR_GP25       @ = 1 (B)
     .equ FADE_TOP,          100                     @ 1% duty resolution
     .equ FADE_DIV_INT,      6                       @ -> 250 kHz tick
 
@@ -41,7 +47,7 @@
 
     .section .rodata.banner_pwm_fade, "a"
 banner:
-    .asciz "pwm fade demo @ GP15 (slice 7B)\r\n"
+    .asciz "pwm fade demo @ GP25 (slice 4B)\r\n"
 
     .section .text.main, "ax"
     .thumb_func

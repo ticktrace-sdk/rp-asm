@@ -55,10 +55,12 @@
     .equ TIMER_TIMERAWL,        0x28
     .equ TIMER_DBGPAUSE,        0x2c
     .equ TIMER_PAUSE,           0x30
-    .equ TIMER_INTR,            0x34
-    .equ TIMER_INTE,            0x38
-    .equ TIMER_INTF,            0x3c
-    .equ TIMER_INTS,            0x40
+    .equ TIMER_LOCKED,          0x34
+    .equ TIMER_SOURCE,          0x38
+    .equ TIMER_INTR,            0x3c
+    .equ TIMER_INTE,            0x40
+    .equ TIMER_INTF,            0x44
+    .equ TIMER_INTS,            0x48
 
     @ Convenience: stride between ALARM registers (4 bytes).
     .equ TIMER_ALARM_STRIDE,    4

@@ -57,6 +57,17 @@ trng_get_random_word:
     tst     r1, #TRNG_VALID_EHR_VALID
     beq     1b
     ldr     r0, [r3, #TRNG_EHR_DATA0]
+    @ The CryptoCell EHR holds 192 bits across 6 registers.  Reading only
+    @ EHR_DATA0 leaves the EHR partially-consumed and the ICR-triggered
+    @ refill never starts -- subsequent calls see the same word.  Drain
+    @ DATA1..DATA5 here too (discarding) so ICR really does re-arm the
+    @ source.  We sacrifice 5/6 of the entropy in exchange for caller
+    @ simplicity.
+    ldr     r1, [r3, #TRNG_EHR_DATA0 +  4]
+    ldr     r1, [r3, #TRNG_EHR_DATA0 +  8]
+    ldr     r1, [r3, #TRNG_EHR_DATA0 + 12]
+    ldr     r1, [r3, #TRNG_EHR_DATA0 + 16]
+    ldr     r1, [r3, #TRNG_EHR_DATA0 + 20]
     @ Mark consumed: ICR write clears ISR.EHR_VALID; source refills the EHR.
     movs    r1, #TRNG_ISR_EHR_VALID
     str     r1, [r3, #TRNG_RNG_ICR]

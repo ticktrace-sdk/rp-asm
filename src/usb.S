@@ -101,12 +101,49 @@
 usb_pending_address:    .word 0
     .global  usb_configured
 usb_configured:         .word 0
+    @ USB has independent PID toggles per (endpoint, direction).  EP0 IN and
+    @ EP0 OUT each get their own shadow.
     .global  usb_ep0_pid
-usb_ep0_pid:            .word 0
+usb_ep0_pid:            .word 0     @ EP0 IN PID shadow
+    .global  usb_ep0_out_pid
+usb_ep0_out_pid:        .word 0     @ EP0 OUT PID shadow (STATUS ZLP, etc.)
+    @ Multi-packet IN state for EP0.  Set by _usb_ep0_start_tx; consumed
+    @ chunk-by-chunk in _usb_handle_buff_status when the previous IN packet
+    @ has completed.  Needed for any descriptor > 64 bytes (the full CDC
+    @ config descriptor is 67).
+    .global  usb_ep0_tx_src
+usb_ep0_tx_src:         .word 0
+    .global  usb_ep0_tx_remaining
+usb_ep0_tx_remaining:   .word 0
     .global  usb_ep1_in_pid
 usb_ep1_in_pid:         .word 0
     .global  usb_ep1_out_pid
 usb_ep1_out_pid:        .word 0
+    @ Set to 1 after the SET_LINE_CODING SETUP arrives so the BUFF_STATUS
+    @ EP0 OUT handler knows the next packet is the 7-byte line coding payload
+    @ (not a status-stage ZLP), and can inspect dwDTERate for the 1200-baud
+    @ "reset to BOOTSEL" trick used by Pico tooling.
+    .global  usb_setlc_pending
+usb_setlc_pending:      .word 0
+    @ Shadow of CDC DTR (wValue bit 0 of SET_CONTROL_LINE_STATE).  Set
+    @ to 1 when the host has opened the tty, 0 when it's closed.  Demos
+    @ that want to print a startup banner should wait for the 0->1 edge
+    @ to guarantee the host is actually draining EP1 IN.
+    .global  cdc_dtr
+cdc_dtr:                .word 0
+    @ Init-timing instrumentation: DWT CYCCNT snapshot the first time
+    @ each milestone fires (0 if not yet observed).  Reading these
+    @ alongside a free-running DWT_CYCCNT lets a demo report how long
+    @ each enumeration phase took.  Cycles only — caller decodes to
+    @ wall-clock by knowing the clock rate at that point.
+    .global  usb_t_bus_reset
+usb_t_bus_reset:        .word 0
+    .global  usb_t_first_setup
+usb_t_first_setup:      .word 0
+    .global  usb_t_configured
+usb_t_configured:       .word 0
+    .global  usb_t_dtr
+usb_t_dtr:              .word 0
     .global  cdc_in_busy
 cdc_in_busy:            .word 0
     .global  cdc_rx_head
@@ -118,8 +155,31 @@ cdc_tx_head:            .word 0
     .global  cdc_tx_tail
 cdc_tx_tail:            .word 0
 
-    .equ CDC_RING_SIZE, 64
+    @ Ring must be larger than any single logical write the firmware emits,
+    @ because cdc_putc drops bytes when the ring is full (no back-pressure).
+    @ A 64-byte EP1 IN packet may be in flight (cdc_in_busy=1) while the
+    @ next cdc_puts queues a new line; with a 64-byte ring, multi-field
+    @ status lines (e.g. otp_usb_demo) truncate.  256 absorbs one in-flight
+    @ packet plus a 192-byte log line.
+    .equ CDC_RING_SIZE, 256
     .equ CDC_RING_MASK, (CDC_RING_SIZE - 1)
+
+@ ----------------------------------------------------------------------------
+@ Phase-timing helper: store DWT_CYCCNT into \addr the first time it fires
+@ (no-op if \addr is already non-zero).  Clobbers r0, r1.  Uses local label
+@ 99f, which is a re-usable forward reference - safe to invoke multiple
+@ times in the same function.
+@ ----------------------------------------------------------------------------
+.macro USB_LOG_PHASE addr
+    ldr     r0, =\addr
+    ldr     r1, [r0]
+    cbnz    r1, 99f
+    movw    r1, #0x1004                           @ DWT_CYCCNT low
+    movt    r1, #0xE000                           @ DWT_CYCCNT high
+    ldr     r1, [r1]
+    str     r1, [r0]
+99:
+.endm
 
     .align   2
     .global  cdc_rx_buf
@@ -338,10 +398,10 @@ usb_ep_receive_arm:
     push    {r4, lr}
     mov     r4, r1
 
-    @ Resolve PID shadow for this EP OUT
+    @ Resolve PID shadow for this EP OUT (independent from EP IN side).
     cmp     r0, #0
     bne     1f
-    ldr     r2, =usb_ep0_pid
+    ldr     r2, =usb_ep0_out_pid
     b       9f
 1:  ldr     r2, =usb_ep1_out_pid
 9:  ldrb    r3, [r2]
@@ -480,6 +540,7 @@ usb_device_isr:
     .section .text._usb_handle_bus_reset, "ax"
     .thumb_func
 _usb_handle_bus_reset:
+    USB_LOG_PHASE usb_t_bus_reset
     push    {lr}
     ldr     r0, =USBCTRL_REGS_BASE
     movs    r1, #0
@@ -491,6 +552,8 @@ _usb_handle_bus_reset:
     ldr     r0, =usb_configured
     strb    r1, [r0]
     ldr     r0, =usb_ep0_pid
+    strb    r1, [r0]
+    ldr     r0, =usb_ep0_out_pid
     strb    r1, [r0]
     ldr     r0, =usb_ep1_in_pid
     strb    r1, [r0]
@@ -528,13 +591,16 @@ _usb_handle_bus_reset:
     .section .text._usb_handle_setup, "ax"
     .thumb_func
 _usb_handle_setup:
+    USB_LOG_PHASE usb_t_first_setup
     push    {r4, r5, r6, r7, lr}
 
-    @ Reset EP0 IN PID shadow to DATA1 (per USB spec - first IN data of a
-    @ control transfer is DATA1).  We store 1 so that usb_ep_send picks
-    @ DATA1 then toggles to DATA0 for the second packet.
+    @ Reset EP0 PID shadows to DATA1 (per USB spec - first DATA stage packet
+    @ and the STATUS ZLP are both DATA1; we store 1 so usb_ep_send /
+    @ usb_ep_receive_arm pick DATA1 then toggle.  IN and OUT are independent.
     ldr     r0, =usb_ep0_pid
     movs    r1, #1
+    strb    r1, [r0]
+    ldr     r0, =usb_ep0_out_pid
     strb    r1, [r0]
 
     @ Read SETUP packet
@@ -576,6 +642,11 @@ _usb_handle_setup:
     bne     .Lnot_setcfg
     ldr     r0, =usb_configured
     strb    r6, [r0]                              @ low byte of wValue (0 or 1)
+    @ Snapshot the configured-time the first time SET_CONFIG sets it to
+    @ non-zero (host has finished standard enumeration at this point).
+    cbz     r6, .Lskip_cfg_t
+    USB_LOG_PHASE usb_t_configured
+.Lskip_cfg_t:
     @ Configure EP1 OUT, EP1 IN, EP2 IN in DPRAM ep_ctrl table
     bl      _usb_setup_endpoints
     @ Arm EP1 OUT to receive first packet (64 bytes)
@@ -617,10 +688,15 @@ _usb_handle_setup:
     cmp     r0, #0x20                             @ class
     bne     .Lstall
 
-    @ SET_LINE_CODING (0x20) - host will send 7 bytes on EP0 OUT.  We just
-    @ ack with a ZLP and arm EP0 OUT to swallow the 7-byte data stage.
+    @ SET_LINE_CODING (0x20) - host will send 7 bytes on EP0 OUT.  We
+    @ ack with a ZLP, arm EP0 OUT to swallow the 7-byte data stage, and
+    @ remember that the next EP0 OUT buffer-status should be inspected
+    @ (so we can implement the 1200-baud BOOTSEL trick).
     cmp     r5, #USB_CDC_REQ_SET_LINE_CODING
     bne     .Lnot_setlc
+    ldr     r0, =usb_setlc_pending
+    movs    r1, #1
+    str     r1, [r0]
     movs    r0, #0
     movs    r1, #7
     bl      usb_ep_receive_arm
@@ -641,9 +717,19 @@ _usb_handle_setup:
     b       .Lsetup_done
 .Lnot_getlc:
 
-    @ SET_CONTROL_LINE_STATE (0x22) - just ack with a ZLP
+    @ SET_CONTROL_LINE_STATE (0x22) - wValue bit 0 is DTR (host userspace
+    @ has opened the tty), bit 1 is RTS.  We expose DTR via cdc_dtr so
+    @ demos can print their banner on the rising edge instead of right
+    @ after enumeration (banner-before-tty-open is otherwise dropped on
+    @ the floor because the host doesn't pull bulk IN until DTR is high).
     cmp     r5, #USB_CDC_REQ_SET_CONTROL_LINE_STATE
     bne     .Lstall
+    ldr     r0, =cdc_dtr
+    and     r1, r6, #1                            @ wValue & DTR bit
+    str     r1, [r0]
+    cbz     r1, .Lskip_dtr_t                      @ only record on DTR=1
+    USB_LOG_PHASE usb_t_dtr
+.Lskip_dtr_t:
     movs    r0, #0
     bl      usb_send_zlp
     b       .Lsetup_done
@@ -691,14 +777,14 @@ _usb_send_descriptor:
     ldrb    r0, [r7, #7]                          @ entry.idx
     cmp     r0, r5
     bne     .Ldesc_skip
-    @ Match!
+    @ Match!  Send the descriptor, fragmenting into 64-byte EP0 IN packets
+    @ if necessary (config descriptor is 67 bytes on CDC-ACM).
     ldr     r1, [r7, #0]                          @ src ptr
     ldrh    r2, [r7, #4]                          @ desc len
     cmp     r2, r6
     it      hi
     movhi   r2, r6                                @ min(desclen, wLength)
-    movs    r0, #0                                @ EP0
-    bl      usb_ep_send
+    bl      _usb_ep0_start_tx
     @ Arm EP0 OUT for the host's status-stage ZLP
     movs    r0, #0
     movs    r1, #0
@@ -708,11 +794,102 @@ _usb_send_descriptor:
     adds    r7, #USB_DESC_TABLE_ENTRY_SIZE
     b       .Ldesc_loop
 .Ldesc_stall:
-    @ No descriptor: stall
+    @ No descriptor for this (type,index): properly stall EP0 IN.  EP0
+    @ requires BOTH the per-EP STALL_ARM bit AND the BUFF_CTRL.STALL bit
+    @ - setting only EP_STALL_ARM causes the device to NAK forever
+    @ rather than send a STALL handshake, and the host then waits the
+    @ full USB_CTRL_GET_TIMEOUT (~5 s on Linux) before giving up.  This
+    @ was the dominant component of our slow enumeration: every
+    @ GET_DESCRIPTOR for an unsupported type (Device Qualifier, BOS,
+    @ etc.) burned the full 5-second timeout.
     ldr     r0, =USBCTRL_REGS_BASE
     movs    r1, #1
     str     r1, [r0, #USB_EP_STALL_ARM]
+    ldr     r0, =USBCTRL_DPRAM_BASE + USB_DPRAM_EP_BUF_CTRL
+    movs    r1, #USB_BUFCTRL_STALL >> 8
+    lsls    r1, #8
+    str     r1, [r0]
     pop     {r4, r5, r6, r7, pc}
+
+@ ----------------------------------------------------------------------------
+@ _usb_ep0_start_tx(src, total_len) - begin a multi-packet EP0 IN transfer.
+@   r1 = src
+@   r2 = total_len  (may be > 64; we fragment into 64-byte EP0 IN packets)
+@
+@ Saves (src + 64, total_len - first_chunk) into usb_ep0_tx_{src,remaining}
+@ for the BUFF_STATUS handler to pick up, then ships the first chunk.
+@ Clobbers r0-r3.
+@ ----------------------------------------------------------------------------
+    .section .text._usb_ep0_start_tx, "ax"
+    .thumb_func
+    .global  _usb_ep0_start_tx
+_usb_ep0_start_tx:
+    push    {r4, r5, lr}
+    mov     r4, r1                                @ src
+    mov     r5, r2                                @ total_len
+
+    @ chunk = min(total_len, 64)
+    movs    r3, #64
+    cmp     r5, r3
+    it      ls
+    movls   r3, r5
+
+    @ Save tail (src + chunk, remaining = total_len - chunk) for the next IRQ.
+    add     r1, r4, r3                            @ next src
+    subs    r2, r5, r3                            @ remaining
+    ldr     r0, =usb_ep0_tx_src
+    str     r1, [r0]
+    ldr     r0, =usb_ep0_tx_remaining
+    str     r2, [r0]
+
+    @ Ship the first chunk now.
+    movs    r0, #0                                @ EP0
+    mov     r1, r4                                @ src
+    mov     r2, r3                                @ len
+    bl      usb_ep_send
+    pop     {r4, r5, pc}
+
+@ ----------------------------------------------------------------------------
+@ _usb_ep0_tx_continue - ship the next chunk of a pending EP0 IN transfer.
+@ Called from _usb_handle_buff_status when EP0 IN completes and there are
+@ still bytes left in usb_ep0_tx_remaining.  Returns r0 = 1 if a chunk was
+@ sent (caller should NOT also try to apply pending SET_ADDRESS), 0 if no
+@ pending transfer.  Clobbers r0-r3.
+@ ----------------------------------------------------------------------------
+    .section .text._usb_ep0_tx_continue, "ax"
+    .thumb_func
+    .global  _usb_ep0_tx_continue
+_usb_ep0_tx_continue:
+    push    {r4, r5, lr}
+    ldr     r0, =usb_ep0_tx_remaining
+    ldr     r5, [r0]
+    cbz     r5, 9f                                @ nothing pending -> return 0
+    ldr     r0, =usb_ep0_tx_src
+    ldr     r4, [r0]                              @ src
+
+    @ chunk = min(remaining, 64)
+    movs    r3, #64
+    cmp     r5, r3
+    it      ls
+    movls   r3, r5
+
+    @ Advance state
+    add     r1, r4, r3
+    subs    r2, r5, r3
+    ldr     r0, =usb_ep0_tx_src
+    str     r1, [r0]
+    ldr     r0, =usb_ep0_tx_remaining
+    str     r2, [r0]
+
+    @ Send chunk
+    movs    r0, #0
+    mov     r1, r4
+    mov     r2, r3
+    bl      usb_ep_send
+    movs    r0, #1
+    pop     {r4, r5, pc}
+9:  movs    r0, #0
+    pop     {r4, r5, pc}
 
 @ ----------------------------------------------------------------------------
 @ _usb_setup_endpoints - configure ep_ctrl entries for EP1 OUT, EP1 IN, EP2 IN.
@@ -721,18 +898,21 @@ _usb_send_descriptor:
     .section .text._usb_setup_endpoints, "ax"
     .thumb_func
 _usb_setup_endpoints:
+    @ Each EP needs INTERRUPT_PER_BUFF (bit 29) so the controller sets the
+    @ corresponding BUFF_STATUS bit on buffer completion and raises the USB
+    @ IRQ.  Without it the buffer transfers silently and the ISR never sees
+    @ EP1 OUT bytes arrive or EP1 IN packets complete.
     @ ep_ctrl[1].in   @ DPRAM + 0x008  (EP1 IN, bulk, 64 bytes)
     ldr     r0, =USBCTRL_DPRAM_BASE + USB_DPRAM_EP_CTRL_BASE
-    @ ENABLE | TYPE_BULK | INT_ON_NAK | buffer_offset
-    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_TYPE_BULK | USB_EP1_IN_BUF_OFFSET)
+    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_INTERRUPT_PER_BUF | USB_EPCTRL_TYPE_BULK | USB_EP1_IN_BUF_OFFSET)
     str     r1, [r0, #0]                          @ ep_ctrl[1].in
 
     @ ep_ctrl[1].out  @ DPRAM + 0x00C  (EP1 OUT, bulk, 64 bytes)
-    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_TYPE_BULK | USB_EP1_OUT_BUF_OFFSET)
+    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_INTERRUPT_PER_BUF | USB_EPCTRL_TYPE_BULK | USB_EP1_OUT_BUF_OFFSET)
     str     r1, [r0, #4]                          @ ep_ctrl[1].out
 
     @ ep_ctrl[2].in   @ DPRAM + 0x010  (EP2 IN, interrupt, 8 bytes)
-    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_TYPE_INTERRUPT | USB_EP2_IN_BUF_OFFSET)
+    ldr     r1, =(USB_EPCTRL_ENABLE | USB_EPCTRL_INTERRUPT_PER_BUF | USB_EPCTRL_TYPE_INTERRUPT | USB_EP2_IN_BUF_OFFSET)
     str     r1, [r0, #8]                          @ ep_ctrl[2].in
 
     bx      lr
@@ -747,26 +927,55 @@ _usb_handle_buff_status:
     ldr     r4, =USBCTRL_REGS_BASE
     ldr     r5, [r4, #USB_BUFF_STATUS]            @ raw bits
 
-    @ EP0 IN (bit 0): apply deferred SET_ADDRESS if pending
+    @ EP0 IN (bit 0): either continue a multi-packet IN transfer (e.g. the
+    @ 67-byte config descriptor split into 64 + 3) or apply deferred
+    @ SET_ADDRESS if a control transfer just finished.
     movs    r6, #1
     tst     r5, r6
     beq     .Lnoep0in
+    @ W1C bit 0 BEFORE doing more work so a follow-on usb_ep_send -> buf_ctrl
+    @ store sees a clean status (avoid races with a quick host).
+    movs    r0, #1
+    str     r0, [r4, #USB_BUFF_STATUS]
+    bl      _usb_ep0_tx_continue
+    cbnz    r0, .Lnoep0in                         @ shipped another chunk - done
+    @ No more chunks pending; consider this the end of a control transfer.
     ldr     r0, =usb_pending_address
     ldrb    r1, [r0]
-    cbz     r1, 1f
+    cbz     r1, .Lnoep0in
     @ Apply: ADDR_ENDP = pending; clear pending
     str     r1, [r4, #USB_ADDR_ENDP]
     movs    r2, #0
     strb    r2, [r0]
-1:  @ W1C bit 0
-    movs    r0, #1
-    str     r0, [r4, #USB_BUFF_STATUS]
 .Lnoep0in:
 
-    @ EP0 OUT (bit 1) - host's ZLP status stage; nothing to do
+    @ EP0 OUT (bit 1) - either the host's ZLP status stage (nothing to
+    @ do) or the 7-byte SET_LINE_CODING data stage if we previously set
+    @ usb_setlc_pending.  In the latter case inspect dwDTERate: if it's
+    @ 1200 the host is signalling "reboot into BOOTSEL" (matches the
+    @ tinygo/picotool convention).
     movs    r6, #2
     tst     r5, r6
     beq     .Lnoep0out
+    ldr     r0, =usb_setlc_pending
+    ldr     r1, [r0]
+    cbz     r1, .Lnoep0out_clr
+    movs    r1, #0
+    str     r1, [r0]                              @ consume the pending flag
+    @ dwDTERate is the first 4 bytes of the LINE_CODING struct at the
+    @ start of the EP0 OUT data buffer (== EP0_BUF0 since EP0 IN/OUT
+    @ share that 64-byte region).
+    ldr     r0, =USBCTRL_DPRAM_BASE + USB_DPRAM_EP0_BUF0
+    ldr     r0, [r0]                              @ r0 = dwDTERate (little-endian)
+    movw    r1, #1200
+    cmp     r0, r1
+    bne     .Lnoep0out_clr
+    @ Match!  Reset into BOOTSEL.  We let any pending EP0 ZLP IN have
+    @ already been sent by the SETUP handler before getting here, so the
+    @ host sees a graceful USB tear-down.  rom_reset_to_bootsel does not
+    @ return.
+    bl      rom_reset_to_bootsel
+.Lnoep0out_clr:
     movs    r0, #2
     str     r0, [r4, #USB_BUFF_STATUS]
 .Lnoep0out:
