@@ -18,7 +18,8 @@ Python is only used host-side, for a UF2 packer and the test harness.
 | M5        | SHA256, ADC, TRNG, PIO controller (no pioasm yet)      | done   |
 | M6        | dual-core launch, SIO FIFO mailbox, hardware spinlocks, interpolators | done |
 | M7        | XIP flash boot config (QMI clkdiv tune) + OTP read + bootrom services (1200-baud BOOTSEL trick + `rom_reset_to_bootsel`); glitch detector deferred | partial |
-| M8        | example gallery + cycle-counting docs                  | deferred |
+| M8        | example gallery (49 demos in `examples/`) + cycle-counting via DWT/ITM/TPIU/ETM (`src/trace.S`) | done |
+| M9        | rp-asm studio — TOML catalog + `rpasm` CLI + Gio `rpasm-studio` GUI with picotool flashing, BOOTSEL detection, problems/memory tabs, examples filter, examples-vs-custom mode toggle, project save/load (source tree at `studio/`) | in progress |
 
 **Tests:** **278 T1** (Unicorn) + **3 T2** (QEMU) all green — every
 public driver function has at least one register-trace assertion. T3
@@ -26,7 +27,7 @@ public driver function has at least one register-trace assertion. T3
 
 | Tier | Coverage |
 | ---- | -------- |
-| T1   | 278 cases across 19 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio, trace, sched, spsc, sched_stats, c_bridge) |
+| T1   | 278 cases across 28 suites (smoke, v0.1 blinky, clocks, gpio, timer/systick, dma, pwm, uart, i2c, spi, usb, sha256, adc+trng, pio, trace, sched, spsc, sched_stats, c_bridge, multicore, qmi, otp, bootrom, watchdog, plus driver-specific traces) |
 | T2   | mps2-an505 sanity + ISA arithmetic + SysTick polled COUNTFLAG |
 | T3   | 10 .resc scripts: blinky, clocks, gpio, timer, pwm, dma, uart loopback, i2c eeprom, spi loopback, usb controller bring-up |
 
@@ -85,9 +86,10 @@ quote) in the commit message.
 | C      | `build/hello_c_flash.uf2`    | C→asm AAPCS calls work on real silicon; `_c_runtime_init` zeroes `.bss`; LED toggles at the expected rate driven from `main()` written in C. |
 | Rust   | `build/hello_rust_flash.uf2` | Rust→asm FFI works on `thumbv8m.main-none-eabi`; `librp_asm.a` static archive links cleanly into `no_std` binary; LED toggles at the expected rate driven from `fn main()` written in Rust. |
 
-**Image size:** the M2-default `build/blinky.uf2` (clock bring-up +
-banner + blink) is 728 bytes of `.text`. Every peripheral demo lives in
-`examples/` and builds to its own < 3 KB UF2.
+**Image size:** `build/blinky.uf2` is about 1.2 KB of `.text` once the
+full default driver set is linked (every peripheral demo lives in
+`examples/` and builds to its own < 4 KB UF2 because each example
+brings in only the drivers it needs via the catalog).
 
 ## Build
 
@@ -127,6 +129,46 @@ mounts as a USB MSC device; drag either `.uf2` onto it.
 
 Open a serial terminal at **115200 8N1** on UART0 TX (GP0 / pin 1).
 
+## Studio (`studio/`)
+
+`studio/` is a Go sibling that wraps the SDK with a TOML catalog and two
+front-ends.  It builds the same images the Makefile does (golden-test
+byte-identical to `make build/<name>.uf2`) but offers feature pickers,
+in-app picotool flashing, board-detection, and example browsing.
+
+```
+cd studio
+go build -o build/rpasm ./cmd/rpasm                # CLI
+go build -o build/rpasm-studio ./cmd/rpasm-studio  # Gio GUI
+```
+
+**CLI (`rpasm`):**
+
+```
+rpasm validate <project.toml>     # resolve modules + sources, no build
+rpasm build    <project.toml>     # produce .elf / .bin / .uf2 + memory map
+rpasm flash    <project.toml>     # picotool load first, drive-copy fallback
+rpasm doctor                      # check arm-none-eabi-{as,ld,objcopy,size}
+```
+
+**GUI (`rpasm-studio`):**
+
+- Examples mode: filter & dropdown over `examples/*.S`, preview source,
+  Build → Flash with one click; defaults to SRAM layout for quick
+  iteration.
+- Custom Project mode: Name + source-path input + per-driver feature
+  checkboxes; defaults to flash layout for persistence.
+- Tools row: picotool path/version, live BOOTSEL board badge, "Install
+  picotool" (clone+cmake+make to `~/.local/bin`), "Reset to BOOTSEL"
+  (`picotool reboot -f -u`).
+- Output pane tabs: Output (raw build log) / Problems (parsed
+  file:line errors) / Memory (FLASH+SRAM region usage + per-section
+  breakdown from `arm-none-eabi-size -A`).
+- Project save/load: round-trip the whole UI state to a `.rpasm.toml`.
+
+See [studio/rp-asm-studio-build-guide.md](studio/rp-asm-studio-build-guide.md)
+for the 5-layer architecture writeup.
+
 ## Layout
 
 ```
@@ -140,6 +182,7 @@ tests/unicorn/             T1 host harness + per-driver tests
 tests/qemu/                T2 generic Cortex-M33 ISA smoke runner
 tests/renode/              T3 RP2350 platform + per-driver .resc scripts
 docs/                      per-peripheral cookbooks (see below)
+studio/                    Go sibling: TOML catalog, `rpasm` CLI, `rpasm-studio` Gio GUI
 Makefile                   AS / LD / OBJCOPY / UF2 + test umbrella
 ```
 
@@ -206,12 +249,25 @@ the relevant `build/*.uf2`, watch the serial console / logic analyser.
 
 ## Roadmap
 
-- [ ] M6: dual-core bring-up (SIO FIFO handshake, spinlocks, interpolators)
-- [ ] M7: XIP flash boot + custom boot2 + OTP read
-- [ ] M8: example gallery — Larson scanner via PIO+DMA, USB CDC echo with
-  hardware loopback, dual-core ping-pong
-- [ ] `tools/pioasm.py` (deferred from M5-I)
+**Done**
+
+- [x] M6: dual-core bring-up — SIO FIFO handshake, hardware spinlocks, interpolators
+- [x] M7 (partial): XIP flash boot config (QMI clkdiv tune), OTP read (CHIPID / RANDID / FLASH_DEVINFO), bootrom services (1200-baud BOOTSEL trick + `rom_reset_to_bootsel`)
+- [x] M8: 49-demo example gallery in `examples/` covering every M2–M7 driver
 - [x] Cycle-counting + on-chip printf via DWT/ITM/TPIU/ETM (`src/trace.S`)
+- [x] SRAM-layout images run on real RP2350-A2 silicon (both `_flash.uf2` and `<name>.uf2` are valid hardware targets)
+- [x] C and Rust language bridges (verified on hardware: `hello_c_flash.uf2`, `hello_rust_flash.uf2`)
+
+**In progress**
+
+- [~] M9: rp-asm studio — TOML catalog, `rpasm` CLI, `rpasm-studio` Gio GUI; flash via picotool with drive-copy fallback. Build engine is byte-identical to the Makefile (golden-tested). Polish ongoing.
+
+**Pending**
+
+- [ ] `tools/pioasm.py` (deferred from M5-I; manual hand-encoding works today, see `examples/pio_blink_demo.S`)
+- [ ] M7 deferred: glitch detector
+- [ ] M7 deferred: encrypted boot dev mode (picotool's `--embed` decryptor reads the AES key from OTP unconditionally — no flash-key path without burning OTP pages 29/30/31)
 - [ ] Pin a verified GPIO funcsel for SWO routing on Pico 2 silicon
 - [ ] ETM address-range filtering (`etm_init_with_range`)
 - [ ] DWT data watchpoints (`dwt_set_watchpoint`)
+- [ ] T4 hardware verification for `powman.S`, `i2c.S`, `spi.S` (currently T1/T3 only; I2C/SPI need an external peripheral or loopback fixture)

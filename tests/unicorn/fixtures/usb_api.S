@@ -37,6 +37,18 @@ _park:
     b       .Lpark
 
 @ ----------------------------------------------------------------------------
+@ Stubs for external symbols usb.S calls into (other than the usb_* ones
+@ defined in usb.S itself). usb.S calls rom_reset_to_bootsel after a USB
+@ reset packet; the test harness never drives that path, so a `bx lr` stub
+@ satisfies the linker without affecting test behaviour.
+@ ----------------------------------------------------------------------------
+    .section .text.rom_reset_to_bootsel, "ax"
+    .thumb_func
+    .global rom_reset_to_bootsel
+rom_reset_to_bootsel:
+    bx      lr
+
+@ ----------------------------------------------------------------------------
 @ Reference every public USB symbol so --gc-sections doesn't drop them.
 @ ----------------------------------------------------------------------------
     .section .rodata._keepalive, "a"

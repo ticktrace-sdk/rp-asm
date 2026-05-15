@@ -409,8 +409,8 @@ def _need_fade_elf():
         pytest.skip(f"{FADE_ELF} missing and `make` did not produce it")
 
 
-def test_fade_demo_enables_slice_7():
-    """pwm_fade_demo enables slice 7 (GP15 ch B) after configuring DIV/TOP."""
+def test_fade_demo_enables_slice_4():
+    """pwm_fade_demo enables slice 4 (GP25 ch B = on-board LED) after configuring DIV/TOP."""
     _need_fade_elf()
     sim = RP2350Sim()
     sim.load_elf(FADE_ELF)
@@ -427,13 +427,13 @@ def test_fade_demo_enables_slice_7():
 
     ws = pwm_writes_to(sim, en_addr)
     assert ws, "slice never enabled"
-    # Slice 7 -> bit 7 (= 0x80)
-    assert ws[-1].value == (1 << 7), (
-        f"unexpected EN write value: {ws[-1].value:#x}, want {1<<7:#x}")
+    # Slice 4 -> bit 4 (= 0x10)
+    assert ws[-1].value == (1 << 4), (
+        f"unexpected EN write value: {ws[-1].value:#x}, want {1<<4:#x}")
 
 
-def test_fade_demo_writes_top_and_div_for_slice_7():
-    """The fade demo programs slice-7 TOP=100 and DIV.int=6 before enabling."""
+def test_fade_demo_writes_top_and_div_for_slice_4():
+    """The fade demo programs slice-4 TOP=100 and DIV.int=6 before enabling."""
     _need_fade_elf()
     sim = RP2350Sim()
     sim.load_elf(FADE_ELF)
@@ -447,14 +447,14 @@ def test_fade_demo_writes_top_and_div_for_slice_7():
     en_addr = PWM_BASE + ATOMIC_SET + PWM_EN
     sim.run_until_write(en_addr, max_steps=200_000)
 
-    div7 = pwm_writes_to(sim, pwm_slice_base(7) + PWM_CH_DIV)
-    top7 = pwm_writes_to(sim, pwm_slice_base(7) + PWM_CH_TOP)
-    assert div7 and div7[-1].value == (6 << 4), f"DIV={div7}"
-    assert top7 and top7[-1].value == 100, f"TOP={top7}"
+    div4 = pwm_writes_to(sim, pwm_slice_base(4) + PWM_CH_DIV)
+    top4 = pwm_writes_to(sim, pwm_slice_base(4) + PWM_CH_TOP)
+    assert div4 and div4[-1].value == (6 << 4), f"DIV={div4}"
+    assert top4 and top4[-1].value == 100, f"TOP={top4}"
 
 
-def test_fade_demo_routes_gp15_to_pwm_function():
-    """pwm_set_gpio_function(15) writes FUNCSEL=4 at IO_BANK0[15]."""
+def test_fade_demo_routes_gp25_to_pwm_function():
+    """pwm_set_gpio_function(25) writes FUNCSEL=4 at IO_BANK0[25]."""
     _need_fade_elf()
     sim = RP2350Sim()
     sim.load_elf(FADE_ELF)
@@ -468,7 +468,7 @@ def test_fade_demo_routes_gp15_to_pwm_function():
     en_addr = PWM_BASE + ATOMIC_SET + PWM_EN
     sim.run_until_write(en_addr, max_steps=200_000)
 
-    ctrl_addr = 0x40028000 + 4 + 15 * 8
+    ctrl_addr = 0x40028000 + 4 + 25 * 8
     ctrl_writes = pwm_writes_to(sim, ctrl_addr)
     assert ctrl_writes and ctrl_writes[-1].value == 4, (
-        f"GP15 CTRL writes: {ctrl_writes}")
+        f"GP25 CTRL writes: {ctrl_writes}")
