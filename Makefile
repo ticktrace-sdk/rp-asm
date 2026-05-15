@@ -283,6 +283,15 @@ build/%_app.elf: examples/%.S $(DRIVER_OBJ) link/app_at_0x10008000.ld
 	    -Map=build/$*_app.map -o $@ $(DRIVER_OBJ) build/$*.example.o
 	@$(SIZE) $@
 
+# The default blinky lives in src/main.S, not examples/, so it doesn't match
+# the examples-based pattern above. Provide it as a named target so the
+# docs/bootloader.md walkthrough (`make build/blinky_app.elf`) works.
+build/blinky_app.elf: $(OBJ) link/app_at_0x10008000.ld
+	@mkdir -p $(@D)
+	@$(LD) -T link/app_at_0x10008000.ld -nostdlib --gc-sections \
+	    -Map=build/blinky_app.map -o $@ $(OBJ)
+	@$(SIZE) $@
+
 # --- Footers (CRC32 + SHA-256 manifest) -------------------------------------
 # Status defaults to "good" in Phase 1 since there's no A/B selection logic
 # yet to interpret STAGED/TRYING/GOOD. Phase 2 will start writing other
