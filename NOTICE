@@ -1,0 +1,74 @@
+================================================================================
+                              NOTICE
+================================================================================
+
+Amken RP2350 Assembly SDK
+Copyright (C) 2026 Amken LLC
+
+Amken LLC
+Springfield, Virginia 22151
+United States
+https://amken.io
+[email protected]
+
+--------------------------------------------------------------------------------
+LICENSING
+--------------------------------------------------------------------------------
+
+This software is dual-licensed.
+
+(1) OPEN SOURCE LICENSE
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+    Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public
+    License along with this program. If not, see
+    <https://www.gnu.org/licenses/>.
+
+    The full text of the AGPL-3.0-or-later license is included in the
+    file named LICENSE in the root of this repository.
+
+(2) COMMERCIAL LICENSE
+
+    For organizations that cannot or do not wish to comply with the terms
+    of the GNU Affero General Public License, Amken LLC offers commercial
+    licenses with terms suited to proprietary and embedded use, including
+    redistribution rights, indemnification, and priority support.
+
+    See COMMERCIAL-LICENSE.md for details, or contact:
+    [email protected]
+
+--------------------------------------------------------------------------------
+TRADEMARKS
+--------------------------------------------------------------------------------
+
+"Amken", the Amken logo, and the names of Amken products are trademarks
+of Amken LLC. The AGPL-3.0-or-later license does not grant any rights to
+use these trademarks. Any forks, derivative works, or redistributions
+must use a different name and branding.
+
+--------------------------------------------------------------------------------
+CONTRIBUTIONS
+--------------------------------------------------------------------------------
+
+Contributions to this project are accepted only under a Contributor
+License Agreement (CLA). See CONTRIBUTING.md for details. By submitting
+a contribution, you grant Amken LLC the right to relicense your
+contribution under both the open source and commercial license terms
+described above.
+
+--------------------------------------------------------------------------------
+THIRD-PARTY COMPONENTS
+--------------------------------------------------------------------------------
+
+This software may include third-party components. Where present, those
+components retain their original copyright notices and licenses. See
+the THIRD-PARTY-NOTICES file (if present) for the complete list.

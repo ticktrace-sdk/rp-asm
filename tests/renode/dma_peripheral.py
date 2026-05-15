@@ -1,3 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Copyright (C) 2026 Amken LLC <https://amken.io>
+#
+# This file is part of the Amken RP2350 Assembly SDK.
+# Licensed under AGPL-3.0-or-later; commercial license available.
+# See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+
 """RP2350 DMA functional model for Renode (M3-C).
 
 Loaded by tests/renode/rp2350.repl as the script payload of a

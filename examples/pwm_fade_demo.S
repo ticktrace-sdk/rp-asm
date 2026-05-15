@@ -1,3 +1,11 @@
+@ SPDX-License-Identifier: AGPL-3.0-or-later
+@
+@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@
+@ This file is part of the Amken RP2350 Assembly SDK.
+@ Licensed under AGPL-3.0-or-later; commercial license available.
+@ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+
 @ =============================================================================
 @ examples/pwm_fade_demo.S - 4-second triangle fade on GP25 (on-board LED,
 @                            slice 4 ch B).

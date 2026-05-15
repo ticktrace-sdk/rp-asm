@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Copyright (C) 2026 Amken LLC <https://amken.io>
+#
+# This file is part of the Amken RP2350 Assembly SDK.
+# Licensed under AGPL-3.0-or-later; commercial license available.
+# See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+
 """uf2.py - tiny .bin -> .uf2 packer for RP2350.
 
 Format reference: https://github.com/microsoft/uf2

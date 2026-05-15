@@ -1,3 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Copyright (C) 2026 Amken LLC <https://amken.io>
+#
+# This file is part of the Amken RP2350 Assembly SDK.
+# Licensed under AGPL-3.0-or-later; commercial license available.
+# See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+
 """End-to-end tooling test: synthetic SSBL + TSBL + app, sealed with
 mkmanifest, combined via mkfirmware, then dissected from the UF2 to
 verify every byte ended up where the bootloader will look for it.

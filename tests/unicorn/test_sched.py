@@ -1,3 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Copyright (C) 2026 Amken LLC <https://amken.io>
+#
+# This file is part of the Amken RP2350 Assembly SDK.
+# Licensed under AGPL-3.0-or-later; commercial license available.
+# See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+
 """T1 tests for src/sched.S - the NVIC-priority kernel (QV-style).
 
 Tasks live on NVIC IRQ lines starting at SCHED_BASE_IRQ (48 by default).

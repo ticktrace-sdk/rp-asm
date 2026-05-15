@@ -1,3 +1,11 @@
+@ SPDX-License-Identifier: AGPL-3.0-or-later
+@
+@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@
+@ This file is part of the Amken RP2350 Assembly SDK.
+@ Licensed under AGPL-3.0-or-later; commercial license available.
+@ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+
 @ =============================================================================
 @ examples/spi_loopback_demo.S - SPI0 internal loopback (M4-G).
 @

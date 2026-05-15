@@ -1,3 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Copyright (C) 2026 Amken LLC <https://amken.io>
+#
+# This file is part of the Amken RP2350 Assembly SDK.
+# Licensed under AGPL-3.0-or-later; commercial license available.
+# See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+
 """T1 tests for src/crc32.S - validates that the on-chip CRC32 routine
 produces byte-identical output to Python's zlib.crc32 (and therefore to
 Go's hash/crc32.ChecksumIEEE used by the host tooling) for a range of

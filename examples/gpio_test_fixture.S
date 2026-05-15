@@ -1,3 +1,11 @@
+@ SPDX-License-Identifier: AGPL-3.0-or-later
+@
+@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@
+@ This file is part of the Amken RP2350 Assembly SDK.
+@ Licensed under AGPL-3.0-or-later; commercial license available.
+@ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+
 @ =============================================================================
 @ examples/gpio_test_fixture.S - test-only fixture that *references* every
 @ public gpio_* / gpio_qspi_* symbol so --gc-sections doesn't drop them.

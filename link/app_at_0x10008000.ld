@@ -1,3 +1,12 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * Copyright (C) 2026 Amken LLC <https://amken.io>
+ *
+ * This file is part of the Amken RP2350 Assembly SDK.
+ * Licensed under AGPL-3.0-or-later; commercial license available.
+ * See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
+ */
+
 /* ============================================================================
  * app_at_0x10008000.ld - App image linked for slot A (480 KiB - 256 B at
  * 0x10008000). Used when the SDK's bootloader chain is shipped; the SSBL
