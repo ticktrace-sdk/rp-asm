@@ -72,6 +72,7 @@ lower tiers (T1/T2/T3) cover it.
 | `powman.S`    | ❌ Not yet     | linked into DRIVER_SRC but no caller in the M2 path                 |
 | `i2c.S`       | ❌ Not yet     | T1/T3 only — needs external I2C peripheral                          |
 | `spi.S`       | ❌ Not yet     | T1/T3 only — needs external SPI peripheral                          |
+| `ssbl.S` + `tsbl_bypass.S` + `crc32.S` | ✅ Direct | `firmware_blinky.uf2` — full FSBL→SSBL→TSBL→app chain on real silicon. SSBL CRC32-validates the 24 KiB TSBL slot, TSBL CRC32-validates the app slot, blinky runs end-to-end. Proves all three handoffs (SP/PC/VTOR transitions) work as designed. |
 
 When a new driver is hardware-verified, update the row and reference
 the UF2 (and any debug observation — UART log, scope trace, dmesg

@@ -272,6 +272,25 @@ build/tsbl_bypass.elf: build/tsbl/tsbl_bypass.o build/crc32.o link/tsbl.ld
 	    build/tsbl/tsbl_bypass.o build/crc32.o
 	@$(SIZE) $@
 
+build/tsbl_ab.elf: build/tsbl/tsbl_ab.o build/crc32.o link/tsbl.ld
+	@$(LD) -T link/tsbl.ld -nostdlib --gc-sections -Map=build/tsbl_ab.map -o $@ \
+	    build/tsbl/tsbl_ab.o build/crc32.o
+	@$(SIZE) $@
+
+# --- App slot B (linked at 0x10080000) --------------------------------------
+build/%_app_slotB.elf: examples/%.S $(DRIVER_OBJ) link/app_at_0x10080000.ld
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o build/$*.example_slotB.o $<
+	@$(LD) -T link/app_at_0x10080000.ld -nostdlib --gc-sections \
+	    -Map=build/$*_app_slotB.map -o $@ $(DRIVER_OBJ) build/$*.example_slotB.o
+	@$(SIZE) $@
+
+build/blinky_app_slotB.elf: $(OBJ) link/app_at_0x10080000.ld
+	@mkdir -p $(@D)
+	@$(LD) -T link/app_at_0x10080000.ld -nostdlib --gc-sections \
+	    -Map=build/blinky_app_slotB.map -o $@ $(OBJ)
+	@$(SIZE) $@
+
 # --- Apps linked at the bootloader's slot-A base ----------------------------
 # Mirrors the existing `_flash.elf` pattern but targets 0x10008000. Use this
 # when an example is destined for the bootloader chain rather than the bare
@@ -299,7 +318,7 @@ build/blinky_app.elf: $(OBJ) link/app_at_0x10008000.ld
 build/%.footer.bin: build/%.bin $(RPASM)
 	@$(RPASM) mkmanifest $< -o $@ -status good
 
-# --- Combined firmware UF2 ---------------------------------------------------
+# --- Combined firmware UF2 (-bypass: single slot) ---------------------------
 # `make build/firmware_blinky.uf2` packs SSBL + TSBL-bypass + their footers
 # + blinky as the app + its footer into one drag-droppable image.
 build/firmware_%.uf2: \
@@ -315,9 +334,37 @@ build/firmware_%.uf2: \
 	    0x1007FF00:build/$*_app.footer.bin
 	@echo "  UF2     $@"
 
+# --- Combined firmware UF2 (-ab: both slots, B has higher seq) --------------
+# Default seqs: slot A = 1, slot B = 2 so the TSBL boots slot B first. The
+# user can override via `make ... TSBL_AB_SEQ_A=N TSBL_AB_SEQ_B=M`.
+TSBL_AB_SEQ_A ?= 1
+TSBL_AB_SEQ_B ?= 2
+
+build/%_app.seqA.footer.bin: build/%_app.bin $(RPASM)
+	@$(RPASM) mkmanifest $< -o $@ -status good -seq $(TSBL_AB_SEQ_A)
+
+build/%_app_slotB.seqB.footer.bin: build/%_app_slotB.bin $(RPASM)
+	@$(RPASM) mkmanifest $< -o $@ -status good -seq $(TSBL_AB_SEQ_B)
+
+build/firmware_%_ab.uf2: \
+        build/ssbl.bin \
+        build/tsbl_ab.bin build/tsbl_ab.footer.bin \
+        build/%_app.bin build/%_app.seqA.footer.bin \
+        build/%_app_slotB.bin build/%_app_slotB.seqB.footer.bin \
+        $(RPASM)
+	@$(RPASM) mkfirmware -o $@ \
+	    0x10000000:build/ssbl.bin \
+	    0x10001000:build/tsbl_ab.bin \
+	    0x10006F00:build/tsbl_ab.footer.bin \
+	    0x10008000:build/$*_app.bin \
+	    0x1007FF00:build/$*_app.seqA.footer.bin \
+	    0x10080000:build/$*_app_slotB.bin \
+	    0x100F7F00:build/$*_app_slotB.seqB.footer.bin
+	@echo "  UF2     $@"
+
 .PHONY: bootloader
-bootloader: build/ssbl.bin build/tsbl_bypass.bin
-	@echo "  BL      built SSBL + TSBL-bypass"
+bootloader: build/ssbl.bin build/tsbl_bypass.bin build/tsbl_ab.bin
+	@echo "  BL      built SSBL + TSBL-bypass + TSBL-ab"
 
 # -------------------------------------------------------------- flash variants
 # Default `blinky` is built from src/main.S; build/blinky_flash.uf2 produces

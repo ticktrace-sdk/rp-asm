@@ -92,10 +92,20 @@
 @ TSBL writes a magic into WATCHDOG_SCRATCH[7] and triggers a watchdog
 @ reset; the scratch register survives the warm reset, and the SSBL/TSBL
 @ checks it on the way up.
+@
+@ Scratch[6] is used by the -ab flavor to track an in-flight slot attempt:
+@ TSBL writes TRY_A/TRY_B before jumping, the app's boot_confirm() clears
+@ it once the slot is known healthy. If the marker survives a warm reset
+@ (= the app never confirmed) the TSBL flips to the other slot, which is
+@ the rollback. POR clears scratch[6], so a power-cycle gives a clean
+@ slate.
 
     .equ BL_SCRATCH_REG,            7
+    .equ BL_SCRATCH_AB_REG,         6
     .equ BL_SCRATCH_NONE,           0x00000000
     .equ BL_SCRATCH_FORCE_DFU,      0xB001DF00    @ stay in DFU on next boot
     .equ BL_SCRATCH_FORCE_BOOTSEL,  0xB001B005    @ punt to mask-ROM BOOTSEL
     .equ BL_SCRATCH_PREFER_SLOT_A,  0xB001A2A0    @ -ab: boot A this time
     .equ BL_SCRATCH_PREFER_SLOT_B,  0xB001A2B0    @ -ab: boot B this time
+    .equ BL_SCRATCH_AB_TRY_A,       0xB001AB0A    @ -ab: attempting slot A
+    .equ BL_SCRATCH_AB_TRY_B,       0xB001AB0B    @ -ab: attempting slot B
