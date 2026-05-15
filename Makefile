@@ -228,6 +228,88 @@ build/%.uf2: build/%.bin tools/uf2.py
 	@python3 tools/uf2.py $< $(LOAD_ADDR) $@
 	@echo "  UF2     $@"
 
+# ============================================================================
+# Bootloader chain — SSBL + TSBL-bypass + app slot A.
+#
+# Three stages, three binaries, each sealed with a 256-byte footer (CRC32 +
+# SHA-256) produced by `rpasm mkmanifest`. `rpasm mkfirmware` then stitches
+# them into a single one-drag-drop UF2.
+#
+# Stage diagram (Phase 1, single-slot -bypass flavor):
+#   0x10000000  SSBL          (4 KiB; no footer in Phase 1)
+#   0x10001000  TSBL-bypass   (≤ 24 KiB - 256)
+#   0x10006F00  TSBL footer   (256 B; produced by mkmanifest from tsbl bin)
+#   0x10008000  app           (≤ 480 KiB - 256)
+#   0x1007FF00  app footer    (256 B)
+# ============================================================================
+
+# crc32.o is shared between the SSBL and TSBL builds. Each ELF includes its
+# own copy (no service-table dependency between stages).
+build/crc32.o: src/crc32.S
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o $@ $<
+	@echo "  AS      $<"
+
+# --- SSBL --------------------------------------------------------------------
+build/ssbl/%.o: src/ssbl/%.S include/rp2350.inc include/bootloader.inc
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o $@ $<
+	@echo "  AS      $<"
+
+build/ssbl.elf: build/ssbl/ssbl.o build/crc32.o link/ssbl.ld
+	@$(LD) -T link/ssbl.ld -nostdlib --gc-sections -Map=build/ssbl.map -o $@ \
+	    build/ssbl/ssbl.o build/crc32.o
+	@$(SIZE) $@
+
+# --- TSBL flavors ------------------------------------------------------------
+build/tsbl/%.o: src/tsbl/%.S include/rp2350.inc include/bootloader.inc
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o $@ $<
+	@echo "  AS      $<"
+
+build/tsbl_bypass.elf: build/tsbl/tsbl_bypass.o build/crc32.o link/tsbl.ld
+	@$(LD) -T link/tsbl.ld -nostdlib --gc-sections -Map=build/tsbl_bypass.map -o $@ \
+	    build/tsbl/tsbl_bypass.o build/crc32.o
+	@$(SIZE) $@
+
+# --- Apps linked at the bootloader's slot-A base ----------------------------
+# Mirrors the existing `_flash.elf` pattern but targets 0x10008000. Use this
+# when an example is destined for the bootloader chain rather than the bare
+# bootrom path.
+build/%_app.elf: examples/%.S $(DRIVER_OBJ) link/app_at_0x10008000.ld
+	@mkdir -p $(@D)
+	@$(ASM) $(ASFLAGS) -o build/$*.example.o $<
+	@$(LD) -T link/app_at_0x10008000.ld -nostdlib --gc-sections \
+	    -Map=build/$*_app.map -o $@ $(DRIVER_OBJ) build/$*.example.o
+	@$(SIZE) $@
+
+# --- Footers (CRC32 + SHA-256 manifest) -------------------------------------
+# Status defaults to "good" in Phase 1 since there's no A/B selection logic
+# yet to interpret STAGED/TRYING/GOOD. Phase 2 will start writing other
+# statuses via the host DFU tool, not at build time.
+build/%.footer.bin: build/%.bin $(RPASM)
+	@$(RPASM) mkmanifest $< -o $@ -status good
+
+# --- Combined firmware UF2 ---------------------------------------------------
+# `make build/firmware_blinky.uf2` packs SSBL + TSBL-bypass + their footers
+# + blinky as the app + its footer into one drag-droppable image.
+build/firmware_%.uf2: \
+        build/ssbl.bin \
+        build/tsbl_bypass.bin build/tsbl_bypass.footer.bin \
+        build/%_app.bin build/%_app.footer.bin \
+        $(RPASM)
+	@$(RPASM) mkfirmware -o $@ \
+	    0x10000000:build/ssbl.bin \
+	    0x10001000:build/tsbl_bypass.bin \
+	    0x10006F00:build/tsbl_bypass.footer.bin \
+	    0x10008000:build/$*_app.bin \
+	    0x1007FF00:build/$*_app.footer.bin
+	@echo "  UF2     $@"
+
+.PHONY: bootloader
+bootloader: build/ssbl.bin build/tsbl_bypass.bin
+	@echo "  BL      built SSBL + TSBL-bypass"
+
 # -------------------------------------------------------------- flash variants
 # Default `blinky` is built from src/main.S; build/blinky_flash.uf2 produces
 # the same image linked at 0x10000000 for hardware boot.
