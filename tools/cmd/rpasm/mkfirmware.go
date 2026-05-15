@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/amken3d/rp-asm/tools/internal/firmware"
+	"github.com/amken3d/rp-asm/tools/firmware"
 )
 
 const mkfirmwareUsage = `usage: rpasm mkfirmware -o <output.uf2> <addr>:<file.bin> [<addr>:<file.bin> ...]
