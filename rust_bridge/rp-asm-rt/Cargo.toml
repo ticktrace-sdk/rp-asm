@@ -1,0 +1,12 @@
+[package]
+name = "rp-asm-rt"
+version = "0.1.0"
+edition = "2021"
+description = "Runtime helpers for rp-asm Rust apps: global allocator, entry macro, panic handler defaults."
+publish = false
+
+[lib]
+name = "rp_asm_rt"
+
+[dependencies]
+rp-asm-sys = { path = "../rp-asm-sys" }
