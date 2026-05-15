@@ -102,17 +102,27 @@ make bench-sizes # print image-size table (no flash needed)
 
 ## Flash
 
-Real hardware requires the **flash-resident** UF2 variant -- SRAM
-images don't run reliably on Pico 2 (RP2350-A2 silicon).  See
-[docs/boot.md](docs/boot.md) for the bring-up story.
+Both UF2 variants now boot on hardware.  Pick the one that matches
+your iteration loop:
+
+| `build/<name>.uf2`          | SRAM-resident at `0x20000000`. Volatile (loses the program on power loss). Useful when you want quick A/B turnaround on hardware. |
+| `build/<name>_flash.uf2`    | XIP flash at `0x10000000`. Survives power cycles. Default for shipped firmware. |
 
 ```
-make build/blinky_flash.uf2         # default M2 firmware
-make build/<example>_flash.uf2      # any example
+make build/blinky.uf2               # SRAM variant
+make build/blinky_flash.uf2         # flash variant
+make build/<example>_flash.uf2      # any example, flash variant
 ```
 
-Hold **BOOTSEL** on the Pico 2 while plugging in USB. The bootrom mounts
-as a USB MSC device; drag the `_flash.uf2` onto it.
+`tools/uf2.py` now picks the right UF2 family ID automatically from
+the load address (`0xE48BFF57` RP2XXX_ABSOLUTE for SRAM,
+`0xE48BFF59` RP2350_ARM_S for flash).  Earlier versions of the
+packer hard-coded the flash family for SRAM images, which the
+bootrom silently rejected.  See [docs/boot.md](docs/boot.md) for
+the full bring-up story.
+
+Hold **BOOTSEL** on the Pico 2 while plugging in USB. The bootrom
+mounts as a USB MSC device; drag either `.uf2` onto it.
 
 Open a serial terminal at **115200 8N1** on UART0 TX (GP0 / pin 1).
 

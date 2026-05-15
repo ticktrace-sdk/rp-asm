@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""uf2.py - tiny .bin -> .uf2 packer for RP2350 Arm-Secure SRAM images.
+"""uf2.py - tiny .bin -> .uf2 packer for RP2350.
 
 Format reference: https://github.com/microsoft/uf2
 
@@ -14,6 +14,17 @@ Each 512-byte block:
     u32 file_size_or_family_id
     u8  data[476]        zero-padded payload
     u32 magic_end        0x0AB16F30
+
+Family ID selection (matches picotool's elf2uf2 ram_style detection):
+
+    Load address                 Family ID    Family name
+    0x10000000 - 0x14ffffff      0xE48BFF59   RP2350_ARM_S       (XIP flash)
+    0x20000000 - 0x20ffffff      0xE48BFF57   RP2XXX_ABSOLUTE    (RAM/SRAM)
+
+The bootrom uses the family ID to choose its load path. An SRAM-
+resident image with the flash family ID is silently rejected on real
+hardware after BOOTSEL ejects; with the absolute family ID it is
+loaded at the literal address and entered.
 """
 
 import struct
@@ -24,11 +35,25 @@ UF2_MAGIC_START1   = 0x9E5D5157
 UF2_MAGIC_END      = 0x0AB16F30
 UF2_FLAG_FAMILY_ID = 0x00002000
 
-# picotool family IDs for RP2350.  rp2350-arm-s matches the IMAGE_DEF flags
-# we emit in startup.S (chip=RP2350, cpu=Arm, security=S).
-FAMILY_RP2350_ARM_S = 0xE48BFF59
+# Canonical UF2 family IDs (microsoft/uf2 registry).
+FAMILY_RP2350_ARM_S    = 0xE48BFF59
+FAMILY_RP2XXX_ABSOLUTE = 0xE48BFF57
 
 PAYLOAD = 256
+
+
+def family_for(base_addr: int) -> int:
+    """Pick the right UF2 family ID from the load address."""
+    # XIP flash window on RP2350: 0x10000000..0x14FFFFFF (4 MB on Pico 2).
+    if 0x10000000 <= base_addr < 0x15000000:
+        return FAMILY_RP2350_ARM_S
+    # SRAM region on RP2350: 0x20000000..0x20081FFF (520 KB) plus scratch.
+    if 0x20000000 <= base_addr < 0x21000000:
+        return FAMILY_RP2XXX_ABSOLUTE
+    raise SystemExit(
+        f"uf2.py: load address 0x{base_addr:08X} is not in a known RP2350 "
+        f"flash or SRAM range; refuse to guess UF2 family ID."
+    )
 
 
 def pack(bin_path: str, base_addr: int, uf2_path: str, family: int) -> None:
@@ -60,7 +85,8 @@ def main() -> int:
     if len(sys.argv) != 4:
         sys.stderr.write("usage: uf2.py <input.bin> <base_addr> <output.uf2>\n")
         return 1
-    pack(sys.argv[1], int(sys.argv[2], 0), sys.argv[3], FAMILY_RP2350_ARM_S)
+    base_addr = int(sys.argv[2], 0)
+    pack(sys.argv[1], base_addr, sys.argv[3], family_for(base_addr))
     return 0
 
 
