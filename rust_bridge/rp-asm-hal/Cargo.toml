@@ -1,0 +1,14 @@
+[package]
+name = "rp-asm-hal"
+version = "0.1.0"
+edition = "2021"
+description = "embedded-hal 1.0 trait implementations over the rp-asm driver core."
+publish = false
+
+[lib]
+name = "rp_asm_hal"
+
+[dependencies]
+rp-asm-sys = { path = "../rp-asm-sys" }
+embedded-hal = "1.0"
+embedded-io = "0.6"

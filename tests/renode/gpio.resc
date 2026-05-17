@@ -1,0 +1,39 @@
+:name: rp-asm M3-A GPIO demo
+:description: Loads build/gpio_demo.elf, runs for 100 ms, asserts at least
+:             8 SIO_GPIO_OUT_* events on pins 22/23/24.
+
+# ------------------------------------------------------------------- Setup
+$bin?=@build/gpio_demo.elf
+
+mach create "rp2350"
+machine LoadPlatformDescription @tests/renode/rp2350.repl
+
+showAnalyzer uart0
+
+# ------------------------------------------------------------------- Image
+sysbus LoadELF $bin
+
+cpu0 VectorTableOffset 0x20000000
+
+# ----------------------------------------------------------- Bus monitor
+# All four atomic aliases of SIO_GPIO_OUT (0xD0000010) plus its SET / CLR /
+# XOR siblings.  Each watchpoint logs the (address, value) pair so the
+# runner can grep `GPIO_OUT_*` events.
+#
+# SIO_GPIO_OUT       = 0xD0000010
+# SIO_GPIO_OUT_SET   = 0xD0000018
+# SIO_GPIO_OUT_CLR   = 0xD0000020
+# SIO_GPIO_OUT_XOR   = 0xD0000028
+# SIO_GPIO_OE_SET    = 0xD0000038
+sysbus AddWatchpointHook 0xd0000018 4 Write "cpu.InfoLog('GPIO_OUT_SET @ 0x{0:X} = 0x{1:X}'.format(address, value))"
+sysbus AddWatchpointHook 0xd0000020 4 Write "cpu.InfoLog('GPIO_OUT_CLR @ 0x{0:X} = 0x{1:X}'.format(address, value))"
+sysbus AddWatchpointHook 0xd0000028 4 Write "cpu.InfoLog('GPIO_OUT_XOR @ 0x{0:X} = 0x{1:X}'.format(address, value))"
+sysbus AddWatchpointHook 0xd0000038 4 Write "cpu.InfoLog('GPIO_OE_SET @ 0x{0:X} = 0x{1:X}'.format(address, value))"
+
+# ----------------------------------------------------------- Run + dump
+emulation RunFor "00:00:00.100"
+
+echo "----- UART0 dump -----"
+uart0 DumpHistoryBuffer
+
+echo "----- Done -----"

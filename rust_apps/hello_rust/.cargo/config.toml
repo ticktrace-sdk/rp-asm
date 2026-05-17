@@ -1,0 +1,9 @@
+[build]
+target = "thumbv8m.main-none-eabi"
+
+[target.thumbv8m.main-none-eabi]
+linker = "arm-none-eabi-ld"
+
+[unstable]
+# Required for build-std on stable: no_std bins don't need build-std but
+# explicit profile control is helpful.  Leaving empty for now; reserved.

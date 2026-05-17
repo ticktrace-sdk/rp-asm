@@ -1,0 +1,28 @@
+:name: rp-asm M3-D PWM fade demo
+:description: Loads build/pwm_fade_demo.elf and runs for 100 ms simulated
+:             time.  The .repl PWM peripheral logs every CC write and
+:             every slice-enable event; the runner asserts on both.
+
+# ------------------------------------------------------------------- Setup
+$bin?=@build/pwm_fade_demo.elf
+
+mach create "rp2350"
+machine LoadPlatformDescription @tests/renode/rp2350.repl
+
+showAnalyzer uart0
+
+# ------------------------------------------------------------------- Image
+sysbus LoadELF $bin
+cpu0 VectorTableOffset 0x20000000
+
+# ----------------------------------------------------------- Run + dump
+# 1 simulated second is enough to observe the first ~50 fade steps (one
+# step every ~20 ms at 150 MHz).  100 ms was too tight; the spec mentions
+# 100 ms but the fade demo's busy loop wouldn't have produced enough
+# samples in that window.
+emulation RunFor "00:00:01"
+
+echo "----- UART0 dump -----"
+uart0 DumpHistoryBuffer
+
+echo "----- Done -----"

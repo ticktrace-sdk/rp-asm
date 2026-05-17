@@ -1,0 +1,54 @@
+:name: rp-asm M3-B timer alarm demo
+:description: Loads build/timer_alarm_demo.elf onto the simulated RP2350,
+:             runs for 1 simulated second, asserts that the TIMER0 ALARM0
+:             ISR drives at least 9 LED toggles via SIO_GPIO_OUT_XOR.
+
+# ---------------------------------------------------------------------- Setup
+$bin?=@build/timer_alarm_demo.elf
+
+mach create "rp2350-timer"
+machine LoadPlatformDescription @tests/renode/rp2350.repl
+
+# Hook UART0 onto the test analyzer so its output ends up in the log.
+showAnalyzer uart0
+
+# ---------------------------------------------------------------------- Image
+sysbus LoadELF $bin
+cpu0 VectorTableOffset 0x20000000
+
+# Bus-monitor: LED toggles on GPIO25 land in SIO_GPIO_OUT_XOR.
+sysbus AddWatchpointHook 0xd0000028 4 Write "cpu.InfoLog('LED_TOGGLE @ 0x{0:X} = 0x{1:X}'.format(address, value))"
+
+# Renode's PythonPeripheral can't model the TIMER0 alarm comparator firing
+# NVIC IRQ 0 on its own (it's a passive bus responder, not a tick source).
+# To still exercise the full ISR path we periodically pend TIMER0_IRQ_0
+# (NVIC line 0, register NVIC_ISPR0 = 0xE000E200, bit 0) by chunking the
+# RunFor into 100 ms slices and pending the IRQ between slices.  Each pend
+# drives the firmware through alarm0_isr exactly like a real alarm would.
+
+# ---------------------------------------------------------------------- Run
+# 10 x 100 ms = 1 simulated second; expect ~10 alarm0_isr invocations.
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+sysbus WriteDoubleWord 0xE000E200 0x00000001
+emulation RunFor "00:00:00.100"
+
+echo "----- UART0 dump -----"
+uart0 DumpHistoryBuffer
+
+echo "----- Done -----"

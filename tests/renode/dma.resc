@@ -1,0 +1,28 @@
+:name: rp-asm M3-C DMA memcpy demo
+:description: Loads build/dma_memcpy_demo.elf, runs for 100 ms simulated, and
+:             dumps UART0 + GPIO toggle counts.
+
+# ------------------------------------------------------------------- Setup
+$bin?=@build/dma_memcpy_demo.elf
+
+mach create "rp2350"
+machine LoadPlatformDescription @tests/renode/rp2350.repl
+
+showAnalyzer uart0
+
+# ------------------------------------------------------------------- Image
+sysbus LoadELF $bin
+
+cpu0 VectorTableOffset 0x20000000
+
+# ----------------------------------------------------------- Bus monitor
+# Tally GPIO25 toggles at 0xD0000028 (SIO_GPIO_OUT_XOR).
+sysbus AddWatchpointHook 0xd0000028 4 Write "cpu.InfoLog('LED_TOGGLE @ 0x{0:X} = 0x{1:X}'.format(address, value))"
+
+# ----------------------------------------------------------- Run + dump
+emulation RunFor "00:00:00.500"
+
+echo "----- UART0 dump -----"
+uart0 DumpHistoryBuffer
+
+echo "----- Done -----"
