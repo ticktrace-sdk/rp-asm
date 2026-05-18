@@ -1,4 +1,4 @@
-:name: rp-asm v0.1 blinky
+:name: ticktrace v0.1 blinky
 :description: Loads build/blinky.elf onto the simulated RP2350, runs for
 :             1 simulated second, and dumps UART0 + GPIO toggle counts.
 

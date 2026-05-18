@@ -1,5 +1,5 @@
 @ =============================================================================
-@ bench_sched_post.S — post-to-task-entry latency, 32 samples.
+@ bench_sched_post.S: post-to-task-entry latency, 32 samples.
 @
 @ Setup:
 @   - Standard 150 MHz clock bring-up

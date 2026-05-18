@@ -1,4 +1,4 @@
-:name: rp-asm M4-G SPI loopback demo
+:name: ticktrace M4-G SPI loopback demo
 :description: Loads build/spi_loopback_demo.elf, runs for 100 ms simulated, and
 :             dumps UART0.  We expect the UART transcript to contain "PASS"
 :             since the on-silicon LBM mode is faithfully modelled by

@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -49,7 +49,7 @@
     .equ FADE_STEP_DELAY,   500000
 
     .section .rodata.pwm_usb, "a"
-banner_uart:    .asciz "rp-asm M3-D - PWM fade on GP25 + USB CDC verification\r\n"
+banner_uart:    .asciz "ticktrace M3-D - PWM fade on GP25 + USB CDC verification\r\n"
 prefix_pwm:     .asciz "pwm L="
 prefix_hb:      .asciz "hb "
 suffix_crlf:    .asciz "\r\n"

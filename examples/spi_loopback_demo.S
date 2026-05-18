@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -16,7 +16,7 @@
 @
 @ Build:    make build/spi_loopback_demo.uf2
 @ Verify:   115200 8N1 on GP0; expect
-@             rp-asm M4-G: SPI0 loopback demo
+@             ticktrace M4-G: SPI0 loopback demo
 @             PASS
 @           (or "FAIL <count>" with the number of mismatches)
 @
@@ -59,7 +59,7 @@ spi_loop_src:
 @ ----- Banners --------------------------------------------------------------
     .section .rodata.spi_loop_banners, "a"
 banner_intro:
-    .asciz "rp-asm M4-G: SPI0 loopback demo\r\n"
+    .asciz "ticktrace M4-G: SPI0 loopback demo\r\n"
 banner_pass:
     .asciz "PASS\r\n"
 banner_fail:

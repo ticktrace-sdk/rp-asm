@@ -1,4 +1,4 @@
-:name: rp-asm M3-A GPIO demo
+:name: ticktrace M3-A GPIO demo
 :description: Loads build/gpio_demo.elf, runs for 100 ms, asserts at least
 :             8 SIO_GPIO_OUT_* events on pins 22/23/24.
 

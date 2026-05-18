@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -13,33 +13,33 @@
 @
 @ Public API (AAPCS - r0..r3 are arg registers; r4..r11 callee-saved):
 @
-@   dma_init                                       — bring DMA out of reset
-@   dma_resets_enable                              — alias for dma_init
+@   dma_init                                       : bring DMA out of reset
+@   dma_resets_enable                              : alias for dma_init
 @
-@   dma_channel_set_read(ch, addr)                 — AL1_READ_ADDR (no trig)
-@   dma_channel_set_write(ch, addr)                — AL1_WRITE_ADDR (no trig)
-@   dma_channel_set_trans_count(ch, count)         — AL1 TRANS_COUNT (no trig)
-@   dma_channel_set_ctrl(ch, ctrl)                 — AL1_CTRL (no trig)
+@   dma_channel_set_read(ch, addr)                 : AL1_READ_ADDR (no trig)
+@   dma_channel_set_write(ch, addr)                : AL1_WRITE_ADDR (no trig)
+@   dma_channel_set_trans_count(ch, count)         : AL1 TRANS_COUNT (no trig)
+@   dma_channel_set_ctrl(ch, ctrl)                 : AL1_CTRL (no trig)
 @
 @   dma_channel_configure(ch, ctrl, read, write, count, trig)
-@                                                  — convenience: 5 stores;
+@                                                  : convenience: 5 stores;
 @                                                    if trig != 0, end with
 @                                                    CTRL_TRIG (alias 0).
 @                                                    args 5/6 on stack.
 @
-@   dma_channel_start(ch)                          — MULTI_CHAN_TRIGGER = 1<<ch
-@   dma_channel_wait_for_finish(ch)                — spin while CTRL.BUSY = 1
-@   dma_channel_abort(ch)                          — CHAN_ABORT = 1<<ch; spin
+@   dma_channel_start(ch)                          : MULTI_CHAN_TRIGGER = 1<<ch
+@   dma_channel_wait_for_finish(ch)                : spin while CTRL.BUSY = 1
+@   dma_channel_abort(ch)                          : CHAN_ABORT = 1<<ch; spin
 @                                                    until ABORT readback clears
 @
-@   dma_channel_irq_enable(ch, aggregator)         — INTE[a] |= 1<<ch (atomic SET)
-@   dma_channel_acknowledge_irq(ch, aggregator)    — INTR[a] write 1<<ch (W1C)
+@   dma_channel_irq_enable(ch, aggregator)         : INTE[a] |= 1<<ch (atomic SET)
+@   dma_channel_acknowledge_irq(ch, aggregator)    : INTR[a] write 1<<ch (W1C)
 @
-@   dma_sniff_enable(ch, mode)                     — SNIFF_CTRL.EN=1, DMACH=ch,
+@   dma_sniff_enable(ch, mode)                     : SNIFF_CTRL.EN=1, DMACH=ch,
 @                                                    CALC=mode.  Also pre-zeros
 @                                                    SNIFF_DATA so caller sees a
 @                                                    clean accumulator.
-@   dma_sniff_get_data() -> r0                     — read SNIFF_DATA
+@   dma_sniff_get_data() -> r0                     : read SNIFF_DATA
 @
 @ Cycle budgets (real silicon, no wait states; APB stores are 2 cycles each
 @ on the M33+APB bridge but back-to-back stores can overlap):

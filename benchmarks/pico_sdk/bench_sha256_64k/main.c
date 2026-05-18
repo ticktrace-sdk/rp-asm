@@ -1,4 +1,4 @@
-// bench_sha256_64k (pico-sdk) — paired with rp-asm/bench_sha256_64k.S.
+// bench_sha256_64k (pico-sdk): paired with rp-asm/bench_sha256_64k.S.
 //
 // Hash 64 KiB of 0xA5 via the RP2350 hardware SHA-256 engine.
 

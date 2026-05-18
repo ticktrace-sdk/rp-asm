@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -43,5 +43,5 @@
     .equ SHA256_DIGEST_BYTES, 32
     .equ SHA256_DIGEST_WORDS, 8
 
-    @ DREQ for DMA pacing — RP2350 SHA256 DREQ = 45 (verify datasheet table 6.5.4.1)
+    @ DREQ for DMA pacing; RP2350 SHA256 DREQ = 45 (verify datasheet table 6.5.4.1)
     .equ DREQ_SHA256,         45

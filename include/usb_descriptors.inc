@@ -1,14 +1,14 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
 @ =============================================================================
 @ usb_descriptors.inc - USB standard constants + pre-baked descriptor blobs
-@                       for the rp-asm M4-H CDC-ACM device.
+@                       for the ticktrace M4-H CDC-ACM device.
 @
 @ References:
 @   - USB 2.0 Specification, chapter 9 (standard requests + descriptor types)
@@ -87,7 +87,7 @@
 
 @ ---- Vendor / product identifiers -------------------------------------------
 @   VID 0x2E8A is Raspberry Pi; PID 0x000A is the unallocated test PID we
-@   use across all rp-asm CDC examples.  Hosts will see a unique enumeration
+@   use across all ticktrace CDC examples.  Hosts will see a unique enumeration
 @   based on these.
     .equ USB_VID,                     0x2E8A     @ Raspberry Pi (Trading) Ltd
     .equ USB_PID,                     0x10EE     @ Amken's allotted PID
@@ -237,7 +237,7 @@ usb_string_lang:
     .short  0x0409                     @ LANGID en-US
 usb_string_lang_end:
 
-@ ---- String 1: manufacturer ("rp-asm") -------------------------------------
+@ ---- String 1: manufacturer ("ticktrace") -------------------------------------
     .global usb_string_manufacturer
     .global usb_string_manufacturer_end
 usb_string_manufacturer:
@@ -246,7 +246,7 @@ usb_string_manufacturer:
     .short  'r', 'p', '-', 'a', 's', 'm'
 usb_string_manufacturer_end:
 
-@ ---- String 2: product ("rp-asm CDC-ACM") ----------------------------------
+@ ---- String 2: product ("ticktrace CDC-ACM") ----------------------------------
     .global usb_string_product
     .global usb_string_product_end
 usb_string_product:

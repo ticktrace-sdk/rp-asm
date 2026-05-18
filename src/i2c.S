@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -11,21 +11,21 @@
 @
 @ Public API (AAPCS - r0..r3 are arg registers; r4..r11 callee-saved):
 @
-@   i2c_init(idx, baudrate_hz)              — RESETS clear + IC_ENABLE=0 +
+@   i2c_init(idx, baudrate_hz)              : RESETS clear + IC_ENABLE=0 +
 @                                              IC_CON + HCNT/LCNT/SDA_HOLD +
 @                                              IC_FS_SPKLEN + IC_ENABLE=1
-@   i2c_deinit(idx)                         — IC_ENABLE=0, RESETS assert
-@   i2c_set_baudrate(idx, hz)               — recompute SCL counts
-@   i2c_set_slave_mode(idx, addr)           — IC_ENABLE=0, IC_SAR=addr,
+@   i2c_deinit(idx)                         : IC_ENABLE=0, RESETS assert
+@   i2c_set_baudrate(idx, hz)               : recompute SCL counts
+@   i2c_set_slave_mode(idx, addr)           : IC_ENABLE=0, IC_SAR=addr,
 @                                              IC_CON in slave mode, IC_ENABLE=1
 @   i2c_write_blocking(idx, addr, src, len, nostop_bool) -> r0
 @   i2c_read_blocking (idx, addr, dst, len, nostop_bool) -> r0
-@   i2c_set_pins(idx, sda_pin, scl_pin)     — gpio_set_function + pull-up on
+@   i2c_set_pins(idx, sda_pin, scl_pin)     : gpio_set_function + pull-up on
 @                                              both pins
-@   i2c_set_irqs_enabled(idx, mask)         — IC_INTR_MASK = mask
-@   i2c_clear_irq(idx, which)               — read the appropriate IC_CLR_*
-@   i2c_set_dma_enabled(idx, tx, rx)        — IC_DMA_CR
-@   i2c_get_status(idx) -> r0               — read IC_STATUS
+@   i2c_set_irqs_enabled(idx, mask)         : IC_INTR_MASK = mask
+@   i2c_clear_irq(idx, which)               : read the appropriate IC_CLR_*
+@   i2c_set_dma_enabled(idx, tx, rx)        : IC_DMA_CR
+@   i2c_get_status(idx) -> r0               : read IC_STATUS
 @
 @ Cycle budgets (Cortex-M33 from SRAM, no APB wait states):
 @

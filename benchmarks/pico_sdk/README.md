@@ -30,7 +30,7 @@ make -j
 ## Fairness rules (re-stated)
 
 - Release build, LTO on by default in pico-sdk for these benches.
-- Same clock: `set_sys_clock_khz(150000, true)` matches rp-asm's M2 default.
+- Same clock: `set_sys_clock_khz(150000, true)` matches ticktrace's M2 default.
 - Same hardware: Pico 2 (RP2350-A2), connected via picoprobe.
 - The C harness emits the *same* `BENCH name=X metric=Y value=0xZZZZ`
   line format over UART0 so `benchmarks/run.sh` can parse either side
@@ -46,7 +46,7 @@ markdown delta table.
 The `bench_minimum` and `bench_gpio_toggle` benches print their image
 size off-target (just `arm-none-eabi-size`) and a runtime cycle count
 respectively. The runtime numbers come from `DWT->CYCCNT` on both
-sides — pico-sdk users get to it via `time_us_32()` (which is via
+sides; pico-sdk users get to it via `time_us_32()` (which is via
 TIMER0, slow) OR directly with:
 
 ```c
@@ -59,5 +59,5 @@ uint32_t cycles = dwt_hw->cyccnt - t0;
 ```
 
 The C side of every bench in this directory uses the direct DWT
-access for fairness — going through `time_us_32()` would add ~30
-cycles of overhead per sample that the rp-asm side doesn't pay.
+access for fairness; going through `time_us_32()` would add ~30
+cycles of overhead per sample that the ticktrace side doesn't pay.

@@ -1,4 +1,4 @@
-// bench_dma_memcpy (pico-sdk) — paired with rp-asm/bench_dma_memcpy.S.
+// bench_dma_memcpy (pico-sdk): paired with rp-asm/bench_dma_memcpy.S.
 // DMA 16 KiB SRAM->SRAM, then CPU loop, report both.
 
 #include <stdio.h>

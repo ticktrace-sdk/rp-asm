@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Copyright (C) 2026 Amken LLC <https://amken.io>
+# Copyright (C) 2026 Amken LLC <https://www.amken.us>
 #
-# This file is part of the Amken RP2350 Assembly SDK.
+# This file is part of the ticktrace Assembly SDK.
 # Licensed under AGPL-3.0-or-later; commercial license available.
 # See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
-## rp-asm - pure-assembly RP2350 SDK
+## ticktrace - pure-assembly RP2350 SDK
 ##   make           build/blinky.uf2
 ##   make examples  build/<name>.uf2 for every examples/<name>.S
 ##   make dump      objdump -d of the ELF
@@ -108,7 +108,7 @@ BENCH_ELF := $(patsubst benchmarks/rp_asm/%.S, build/%.elf, $(BENCH_SRC))
 all: $(TARGET).uf2
 
 # ============================================================================
-# Go tools — `rpasm` static binary, replacement for the Python helpers.
+# Go tools: `rpasm` static binary, replacement for the Python helpers.
 # Phase 1a (this commit) ships `rpasm uf2 pack` at byte-parity with
 # tools/uf2.py. Phase 1b adds mkmanifest, mkfirmware. Phase 3 adds dfu.
 # ============================================================================
@@ -131,7 +131,7 @@ examples: $(EXAMPLE_UF2)
 bench: $(BENCH_UF2)
 
 # ============================================================================
-# C bridge — opt-in: builds C apps that link against the asm core.
+# C bridge (opt-in): builds C apps that link against the asm core.
 # Default `make` does NOT pull these in; users opt-in with `make c-apps`.
 # ============================================================================
 CC      := arm-none-eabi-gcc
@@ -167,7 +167,7 @@ build/%.elf: c_apps/%/main.c $(DRIVER_OBJ) $(C_BRIDGE_OBJ) link/sram.ld
 	@$(SIZE) $@
 
 # ============================================================================
-# Rust bridge — also opt-in.  Builds librp_asm.a (static archive of all
+# Rust bridge, also opt-in.  Builds librp_asm.a (static archive of all
 # DRIVER_OBJ), then cargo links against it from rust_apps/*.
 # ============================================================================
 AR := arm-none-eabi-ar
@@ -241,7 +241,7 @@ build/%.uf2: build/%.bin tools/uf2.py
 	@echo "  UF2     $@"
 
 # ============================================================================
-# Bootloader chain — SSBL + TSBL-bypass + app slot A.
+# Bootloader chain: SSBL + TSBL-bypass + app slot A.
 #
 # Three stages, three binaries, each sealed with a 256-byte footer (CRC32 +
 # SHA-256) produced by `rpasm mkmanifest`. `rpasm mkfirmware` then stitches
@@ -515,7 +515,7 @@ build/%.elf: benchmarks/rp_asm/%.S $(DRIVER_OBJ) build/bench_lib.o link/sram.ld
 # bench-sizes: just emit the .text+.rodata size table without running anything
 bench-sizes: $(BENCH_ELF)
 	@echo ""
-	@echo "==== rp-asm benchmark image sizes ===="
+	@echo "==== ticktrace benchmark image sizes ===="
 	@printf "  %-32s  %8s  %8s\n" "image" "text" "total"
 	@for elf in $(BENCH_ELF); do \
 	    sz=$$($(SIZE) -d "$$elf" | awk 'NR==2 {printf "  %8d  %8d", $$1, $$1+$$2}'); \

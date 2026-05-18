@@ -2,7 +2,7 @@
 name = "rp-asm-rt"
 version = "0.1.0"
 edition = "2021"
-description = "Runtime helpers for rp-asm Rust apps: global allocator, entry macro, panic handler defaults."
+description = "Runtime helpers for ticktrace Rust apps: global allocator, entry macro, panic handler defaults."
 publish = false
 
 [lib]

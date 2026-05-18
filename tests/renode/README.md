@@ -1,6 +1,6 @@
 # T3 - Renode integration tests
 
-Tier 3 of the rp-asm test stack runs the actual `build/blinky.elf` against
+Tier 3 of the ticktrace test stack runs the actual `build/blinky.elf` against
 a synthesised RP2350 platform inside [Renode](https://renode.io). This is
 the slowest tier (real CPU emulation, real PL011 model) and runs only on
 demand or in the nightly CI job.
@@ -12,7 +12,7 @@ demand or in the nightly CI job.
 - `RESETS_RESET_DONE` polling spins out correctly when a model mirrors
   RESET <-> RESET_DONE (Renode's `Python.PythonPeripheral` does this).
 - The PL011 driver in `src/uart.S` produces real ASCII bytes - the
-  banner "rp-asm v0.1" appears on UART0.
+  banner "ticktrace v0.1" appears on UART0.
 - LED toggle is observed at the bus level (watchpoint hook on
   `SIO_GPIO_OUT_XOR = 0xD0000028`).
 

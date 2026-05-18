@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -142,7 +142,7 @@ cdc_dtr:                .word 0
     @ Init-timing instrumentation: DWT CYCCNT snapshot the first time
     @ each milestone fires (0 if not yet observed).  Reading these
     @ alongside a free-running DWT_CYCCNT lets a demo report how long
-    @ each enumeration phase took.  Cycles only — caller decodes to
+    @ each enumeration phase took.  Cycles only; caller decodes to
     @ wall-clock by knowing the clock rate at that point.
     .global  usb_t_bus_reset
 usb_t_bus_reset:        .word 0

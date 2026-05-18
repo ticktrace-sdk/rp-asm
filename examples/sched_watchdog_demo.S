@@ -1,13 +1,13 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
 @ =============================================================================
-@ sched_watchdog_demo.S — scheduler + watchdog as a deadman's switch.
+@ sched_watchdog_demo.S: scheduler + watchdog as a deadman's switch.
 @
 @ Setup:
 @   - Watchdog armed with a 200 ms timeout.
@@ -37,7 +37,7 @@
     .thumb
 
     @ Task IDs
-    .equ T_FEED,      0       @ highest priority — never miss a feed
+    .equ T_FEED,      0       @ highest priority; never miss a feed
     .equ T_HEARTBEAT, 1
 
     @ TIMER0 alarm slots
@@ -48,7 +48,7 @@
 
     .equ FEED_PERIOD_US,      100000   @ 100 ms
     .equ HEARTBEAT_PERIOD_US, 1000000  @ 1 s
-    .equ WDG_TIMEOUT_US,      200000   @ 200 ms — must be > FEED_PERIOD_US
+    .equ WDG_TIMEOUT_US,      200000   @ 200 ms; must be > FEED_PERIOD_US
 
     .section .rodata.demo, "a"
 banner:    .asciz "sched_watchdog_demo - 200ms wdg, 100ms feed, 1s heartbeat\r\n"

@@ -2,7 +2,7 @@
 name = "rp-asm-sys"
 version = "0.1.0"
 edition = "2021"
-description = "Raw extern C bindings to the rp-asm driver core."
+description = "Raw extern C bindings to the ticktrace driver core."
 publish = false
 
 [lib]

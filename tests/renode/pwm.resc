@@ -1,4 +1,4 @@
-:name: rp-asm M3-D PWM fade demo
+:name: ticktrace M3-D PWM fade demo
 :description: Loads build/pwm_fade_demo.elf and runs for 100 ms simulated
 :             time.  The .repl PWM peripheral logs every CC write and
 :             every slice-enable event; the runner asserts on both.

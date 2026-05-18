@@ -1,5 +1,5 @@
-// rp-asm-sys — raw extern "C" declarations for every public function in
-// the rp-asm driver core.  Calls into these are `unsafe` from Rust;
+// rp-asm-sys: raw extern "C" declarations for every public function in
+// the ticktrace driver core.  Calls into these are `unsafe` from Rust;
 // build a safe wrapper crate on top if you want typed pins, RAII, etc.
 //
 // The actual symbols live in librp_asm.a, built by the top-level Makefile

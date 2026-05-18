@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -16,7 +16,7 @@
 @ Build:    make examples/clocks_demo.uf2  ->  build/clocks_demo.uf2
 @ Flash:    drop build/clocks_demo.uf2 onto the BOOTSEL drive
 @ Verify:   115200 8N1 on GP0; the banner should read
-@             rp-asm M2 - clk_sys = 150 MHz
+@             ticktrace M2 - clk_sys = 150 MHz
 @           and the LED should toggle every ~1 second.
 @
 @ With clk_sys = 150 MHz the inner busy-loop runs ~12.5x faster than v0.1,
@@ -33,7 +33,7 @@
 
     .section .rodata.banner, "a"
 banner:
-    .asciz "rp-asm M2 - clk_sys = 150 MHz\r\n"
+    .asciz "ticktrace M2 - clk_sys = 150 MHz\r\n"
 
     .section .text.main, "ax"
     .thumb_func

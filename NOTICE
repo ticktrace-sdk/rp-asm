@@ -2,13 +2,13 @@
                               NOTICE
 ================================================================================
 
-Amken RP2350 Assembly SDK
+ticktrace Assembly SDK
 Copyright (C) 2026 Amken LLC
 
 Amken LLC
 Springfield, Virginia 22151
 United States
-https://amken.io
+https://www.amken.us
 [email protected]
 
 --------------------------------------------------------------------------------
@@ -64,6 +64,8 @@ License Agreement (CLA). See CONTRIBUTING.md for details. By submitting
 a contribution, you grant Amken LLC the right to relicense your
 contribution under both the open source and commercial license terms
 described above.
+
+CLA requests and paperwork: cla@amken.us
 
 --------------------------------------------------------------------------------
 THIRD-PARTY COMPONENTS

@@ -1,5 +1,5 @@
 @ =============================================================================
-@ c_bridge/runtime.S — C runtime helpers on top of src/startup.S.
+@ c_bridge/runtime.S: C runtime helpers on top of src/startup.S.
 @
 @ Our SRAM-resident image is loaded via UF2 with .data already in place,
 @ so we don't need a .data copy.  But C globals + statics may live in

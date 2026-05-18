@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Copyright (C) 2026 Amken LLC <https://amken.io>
+# Copyright (C) 2026 Amken LLC <https://www.amken.us>
 #
-# This file is part of the Amken RP2350 Assembly SDK.
+# This file is part of the ticktrace Assembly SDK.
 # Licensed under AGPL-3.0-or-later; commercial license available.
 # See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -10,7 +10,7 @@
 mkmanifest, combined via mkfirmware, then dissected from the UF2 to
 verify every byte ended up where the bootloader will look for it.
 
-Doesn't require the arm-none-eabi toolchain — exercises only the host-
+Doesn't require the arm-none-eabi toolchain; exercises only the host-
 side tooling. The on-target boot chain will reuse exactly these formats.
 """
 
@@ -84,7 +84,7 @@ def test_full_firmware_image():
         with open(app, "wb") as f:
             f.write(app_payload)
 
-        # Seal TSBL and app. (SSBL doesn't have a footer in Phase 1 — the
+        # Seal TSBL and app. (SSBL doesn't have a footer in Phase 1; the
         # bootrom validates it via IMAGE_DEF, and there's no upstream stage
         # that needs to verify it.)
         tsbl_ft = os.path.join(td, "tsbl.footer.bin")

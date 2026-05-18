@@ -1,13 +1,13 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
 @ =============================================================================
-@ sched.inc - NVIC-priority kernel (QV-style) for rp-asm
+@ sched.inc - NVIC-priority kernel (QV-style) for ticktrace
 @
 @ Each "task" is an NVIC handler.  task_post(id) is one STR to NVIC_ISPR;
 @ the CPU services the highest-priority pending task to completion, then
@@ -37,5 +37,5 @@
     .equ SCB_SCR,          0xE000ED10
     .equ SCB_SCR_SEVONPEND, (1 << 4)
 
-@ Task ID aliases — let users say `T_FOO = 0` in their bench instead of
+@ Task ID aliases: let users say `T_FOO = 0` in their bench instead of
 @ hand-tracking numbers.  Define your own .equs in your example/app.

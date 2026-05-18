@@ -2,7 +2,7 @@
 name = "rp-asm-hal"
 version = "0.1.0"
 edition = "2021"
-description = "embedded-hal 1.0 trait implementations over the rp-asm driver core."
+description = "embedded-hal 1.0 trait implementations over the ticktrace driver core."
 publish = false
 
 [lib]

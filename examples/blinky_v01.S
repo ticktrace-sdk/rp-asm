@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -35,7 +35,7 @@
 
     .section .rodata.banner_v01, "a"
 banner:
-    .asciz "rp-asm v0.1 - every cycle matters\r\n"
+    .asciz "ticktrace v0.1 - every cycle matters\r\n"
 tick_msg:
     .asciz "tick\r\n"
 

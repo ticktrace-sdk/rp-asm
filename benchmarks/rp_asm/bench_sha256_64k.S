@@ -1,5 +1,5 @@
 @ =============================================================================
-@ bench_sha256_64k.S — hash 64 KiB of .rodata via the hardware SHA-256 engine.
+@ bench_sha256_64k.S: hash 64 KiB of .rodata via the hardware SHA-256 engine.
 @
 @ Workload: sha256_compute over a 65536-byte aligned buffer of repeating
 @ 0xA5 bytes.  Report DWT cycles.  At 150 MHz the engine consumes one
@@ -7,7 +7,7 @@
 @ number includes the CPU push loop overhead.
 @
 @ The source buffer is 64 KiB so the .text+.rodata of this bench is
-@ correspondingly large.  That's fine — SRAM is 512 KiB.
+@ correspondingly large.  That's fine; SRAM is 512 KiB.
 @ =============================================================================
 
     .syntax unified

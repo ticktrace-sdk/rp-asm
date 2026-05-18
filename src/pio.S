@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -12,7 +12,7 @@
 @ Provides the host-side ("C runtime") functions to program a PIO block and
 @ talk to its state machines.  PIO program assembly itself is done off-line
 @ (see examples/pio_blink_program.S for the hand-encoded blink program; a
-@ proper `pioasm` Python tool is deferred — see ROADMAP.md).
+@ proper `pioasm` Python tool is deferred; see ROADMAP.md).
 @
 @ Public API:
 @   pio_init(r0=pio_idx)                                 deassert RESETS
@@ -280,7 +280,7 @@ pio_sm_get:
 
 @ -----------------------------------------------------------------------------
 @ pio_sm_exec(idx, sm, instr)
-@   Write `instr` to SM_INSTR — executed immediately by the SM.
+@   Write `instr` to SM_INSTR; executed immediately by the SM.
 @ -----------------------------------------------------------------------------
     .section .text.pio_sm_exec, "ax"
     .thumb_func

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Copyright (C) 2026 Amken LLC <https://amken.io>
+# Copyright (C) 2026 Amken LLC <https://www.amken.us>
 #
-# This file is part of the Amken RP2350 Assembly SDK.
+# This file is part of the ticktrace Assembly SDK.
 # Licensed under AGPL-3.0-or-later; commercial license available.
 # See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -240,7 +240,7 @@ def test_banner_printed_via_uart(sim):
     s.run_until_write(SIO_GPIO_OUT_XOR)
     text = bytes(txbuf).decode("ascii", errors="replace")
     assert "150 MHz" in text, f"expected '150 MHz' in UART output, got: {text!r}"
-    assert text.startswith("rp-asm M2"), f"unexpected banner prefix: {text!r}"
+    assert text.startswith("ticktrace M2"), f"unexpected banner prefix: {text!r}"
 
 
 def test_tick_generators_started(sim):

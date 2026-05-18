@@ -1,5 +1,5 @@
 @ =============================================================================
-@ bench_dma_memcpy.S — DMA channel 0 copies 16 KiB SRAM → SRAM.
+@ bench_dma_memcpy.S: DMA channel 0 copies 16 KiB SRAM → SRAM.
 @
 @ Workload: configure ch0 for byte-stride word-size INCR_READ + INCR_WRITE,
 @ kick, wait for !BUSY.  Reports DWT cycles from configure to drain.

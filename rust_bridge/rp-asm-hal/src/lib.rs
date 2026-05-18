@@ -1,11 +1,11 @@
-//! rp-asm-hal — embedded-hal 1.0 trait implementations on top of rp-asm.
+//! rp-asm-hal: embedded-hal 1.0 trait implementations on top of ticktrace.
 //!
 //! Thin wrappers over the asm drivers.  Every method is `unsafe extern "C"`
 //! at the bottom; we put the `unsafe` blocks here so user code doesn't
 //! have to.
 //!
 //! Constructors are documented as "the user is responsible for ensuring
-//! the underlying peripheral has been initialised" — typically by
+//! the underlying peripheral has been initialised"; typically by
 //! calling our asm `*_init` functions from the app's main before
 //! constructing the wrapper.
 
@@ -303,7 +303,7 @@ impl I2c<SevenBitAddress> for I2cBus {
 // SPI bus
 // ============================================================================
 
-/// SPI bus on instance idx (0 or 1).  Caller-managed CS — use
+/// SPI bus on instance idx (0 or 1).  Caller-managed CS; use
 /// `embedded-hal-bus::spi::ExclusiveDevice` to get `SpiDevice` over this
 /// bus + a `Pin`.
 pub struct Spi {

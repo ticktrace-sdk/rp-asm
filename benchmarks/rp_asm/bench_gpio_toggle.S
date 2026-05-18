@@ -1,10 +1,10 @@
 @ =============================================================================
-@ bench_gpio_toggle.S — N× gpio_toggle(25), report DWT cycles.
+@ bench_gpio_toggle.S: N× gpio_toggle(25), report DWT cycles.
 @
 @ Workload: 100_000 calls of `gpio_toggle(25)` in a straight `bl`/`subs`/`bne`
 @ loop.  Reports total cycles and cycles-per-call.
 @
-@ Expected on rp-asm: gpio_toggle is 4 cycles (mask + cmp + str + bx) plus
+@ Expected on ticktrace: gpio_toggle is 4 cycles (mask + cmp + str + bx) plus
 @ ~4 cycles loop overhead (bl + subs + bne taken) = ~8 cycles per iter.
 @ Total ~800_000 cycles ≈ 5.3 ms at 150 MHz.
 @ =============================================================================

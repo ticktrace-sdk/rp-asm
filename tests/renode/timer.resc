@@ -1,4 +1,4 @@
-:name: rp-asm M3-B timer alarm demo
+:name: ticktrace M3-B timer alarm demo
 :description: Loads build/timer_alarm_demo.elf onto the simulated RP2350,
 :             runs for 1 simulated second, asserts that the TIMER0 ALARM0
 :             ISR drives at least 9 LED toggles via SIO_GPIO_OUT_XOR.

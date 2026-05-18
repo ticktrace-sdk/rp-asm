@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -48,8 +48,8 @@ phase_t_irq_armed:  .word 0
 dec_buf:            .space 12
 
     .section .rodata.timing, "a"
-banner_uart:    .asciz "rp-asm init-timing demo. Booting...\r\n"
-banner_cdc:     .asciz "=== rp-asm init timing report ===\r\n"
+banner_uart:    .asciz "ticktrace init-timing demo. Booting...\r\n"
+banner_cdc:     .asciz "=== ticktrace init timing report ===\r\n"
 hdr_phase:      .asciz "phase             cycles_since_main   delta_cycles\r\n"
 sep:            .asciz "----------------- ------------------- ------------\r\n"
 crlf:           .asciz "\r\n"
