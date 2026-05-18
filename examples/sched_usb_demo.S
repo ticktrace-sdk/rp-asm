@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -55,7 +55,7 @@ isr_to_task_q:
 iter_count: .word 0
 
     .section .rodata.sched_usb, "a"
-banner_uart:  .asciz "rp-asm M3+ - sched + spsc + sched_stats verification\r\n"
+banner_uart:  .asciz "ticktrace M3+ - sched + spsc + sched_stats verification\r\n"
 prefix_iter:  .asciz "sched iter="
 mid_byte:     .asciz " byte="
 mid_inv:      .asciz " inv="

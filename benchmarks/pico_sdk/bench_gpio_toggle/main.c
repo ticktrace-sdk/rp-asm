@@ -1,7 +1,7 @@
-// bench_gpio_toggle (pico-sdk) — paired with rp-asm/bench_gpio_toggle.S.
+// bench_gpio_toggle (pico-sdk): paired with rp-asm/bench_gpio_toggle.S.
 //
 // 100_000 calls of gpio_xor_mask, timed with DWT.CYCCNT.  Prints the
-// same "BENCH …" line format the rp-asm side emits.
+// same "BENCH …" line format the ticktrace side emits.
 
 #include <stdio.h>
 #include "pico/stdlib.h"

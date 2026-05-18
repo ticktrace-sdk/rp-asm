@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Copyright (C) 2026 Amken LLC <https://amken.io>
+# Copyright (C) 2026 Amken LLC <https://www.amken.us>
 #
-# This file is part of the Amken RP2350 Assembly SDK.
+# This file is part of the ticktrace Assembly SDK.
 # Licensed under AGPL-3.0-or-later; commercial license available.
 # See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -195,5 +195,5 @@ def test_uart_banner_prefix():
     # Run until we have at least the length of the banner queued up
     sim.run_until_write(SIO_GPIO_OUT_XOR)
     text = bytes(tx).decode("ascii", errors="replace")
-    assert text.startswith("rp-asm v0.1"), (
+    assert text.startswith("ticktrace v0.1"), (
         f"UART output should start with banner, got: {text!r}")

@@ -1,4 +1,4 @@
-// hello_rust — minimum no_std Rust app using the rp-asm core.
+// hello_rust: minimum no_std Rust app using the ticktrace core.
 //
 // Demonstrates:
 //   - calling our asm drivers via the rp-asm-sys crate
@@ -16,10 +16,10 @@ use core::sync::atomic::{AtomicU32, Ordering};
 
 use rp_asm_sys as sys;
 
-// Rust static in .bss — verifies _c_runtime_init zeroes it.
+// Rust static in .bss; verifies _c_runtime_init zeroes it.
 static TOGGLE_COUNT: AtomicU32 = AtomicU32::new(0);
 
-// rp-asm's startup.S expects to call a symbol named `main`.
+// ticktrace's startup.S expects to call a symbol named `main`.
 #[unsafe(no_mangle)]
 pub extern "C" fn main() -> ! {
     unsafe {
@@ -60,7 +60,7 @@ pub extern "C" fn main() -> ! {
 // ----- helpers -------------------------------------------------------------
 
 unsafe fn uart0_puts_str(s: &str) {
-    // We can't pass &str directly — our asm expects a null-terminated C string.
+    // We can't pass &str directly; our asm expects a null-terminated C string.
     // The cheap trick: write each byte through uart0_putc.  For ~30 chars at
     // a time this is fine; for high-throughput logging, use itm_putc instead.
     for b in s.bytes() {

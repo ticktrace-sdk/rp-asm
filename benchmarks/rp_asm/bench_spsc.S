@@ -1,5 +1,5 @@
 @ =============================================================================
-@ bench_spsc.S — measure SPSC byte queue push+pop cycle costs.
+@ bench_spsc.S: measure SPSC byte queue push+pop cycle costs.
 @
 @ Workload: 10 000 pairs of (push, pop) on a 16-byte queue.  Queue never
 @ fills (capacity 15 vs 1 outstanding byte at a time) so we exercise the
@@ -46,7 +46,7 @@ main:
     @ ---- Push-only timing -------------------------------------------------
     @ Push 1 byte, pop 1 byte, repeat.  Time each phase separately by
     @ taking DWT samples at three points: pre-push, post-push/pre-pop,
-    @ post-pop — accumulated over ITERS iterations.
+    @ post-pop, accumulated over ITERS iterations.
 
     movs    r4, #0                    @ push_sum
     movs    r5, #0                    @ pop_sum

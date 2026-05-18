@@ -1,5 +1,5 @@
 @ =============================================================================
-@ bench_irq_latency.S — measure cycles from alarm-arm to first ISR instruction.
+@ bench_irq_latency.S: measure cycles from alarm-arm to first ISR instruction.
 @
 @ Method: arm TIMER0 ALARM0 for "current_us + 1000".  Just before the arming
 @ store, sample DWT.  In the ISR, sample DWT again as the very first thing,
@@ -73,7 +73,7 @@ main:
     movs    r0, #0
     bl      nvic_enable_irq
 
-    @ Enable CPU IRQs (in case startup left PRIMASK set — usually it's clear)
+    @ Enable CPU IRQs (in case startup left PRIMASK set; usually it's clear)
     cpsie   i
 
     @ N_SAMPLES iterations

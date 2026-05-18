@@ -1,17 +1,17 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
 @ =============================================================================
-@ sched.S - NVIC-priority kernel (QV-style) for rp-asm.
+@ sched.S - NVIC-priority kernel (QV-style) for ticktrace.
 @
 @ Concept: every "task" is an NVIC interrupt handler living in a slot
 @ above the hardware peripherals (default IRQ 48..55).  `task_post(id)`
-@ is one STR to NVIC_ISPR — the CPU's NVIC tail-chains into the highest-
+@ is one STR to NVIC_ISPR; the CPU's NVIC tail-chains into the highest-
 @ priority pending task, runs it to completion, and re-enters WFI when
 @ nothing is pending.
 @
@@ -19,7 +19,7 @@
 @   sched_init                                  Clear table, enable SEVONPEND
 @   task_create(r0=id, r1=fn, r2=prio)         Install fn @ vector slot,
 @                                              set priority, NVIC-enable
-@   task_post(r0=id)                            STR to NVIC_ISPR — 5 cycles
+@   task_post(r0=id)                            STR to NVIC_ISPR, 5 cycles
 @   task_clear(r0=id)                           Cancel a pending post
 @   sched_run                                   cpsie i; loop { wfi }
 @   critical_enter() -> r0                      MRS r0, PRIMASK; CPSID i
@@ -60,7 +60,7 @@
     .thumb_func
     .global  sched_init
 sched_init:
-    @ Clear pending bits for all MAX_TASKS slots — there's no spec'd
+    @ Clear pending bits for all MAX_TASKS slots; there's no spec'd
     @ "fresh boot" guarantee, and re-init from a stuck state should work.
     movs    r0, #0xFF                       @ low 8 task bits for our default base 48
     movt    r0, #0                          @ ICPR1 covers IRQ 32..63; bits 16..23 = IRQs 48..55
@@ -134,7 +134,7 @@ task_post:
 @ task_post_n(mask)
 @   r0 = bitmask of task ids (bit i = task i).  Posts all set bits in one
 @   STR to NVIC_ISPR.  Requires every task slot to live in the same NVIC
-@   bank — true when MAX_TASKS=8 and SCHED_BASE_IRQ=48 (bits 16..23 of
+@   bank, true when MAX_TASKS=8 and SCHED_BASE_IRQ=48 (bits 16..23 of
 @   bank 1).  6 cycles total.
 @
 @   Example: task_post_n(0x05) posts tasks 0 and 2.
@@ -188,7 +188,7 @@ sched_run:
 @ ----------------------------------------------------------------------------
 @ critical_enter / critical_exit - PRIMASK-based critical section.
 @   Disables ALL IRQs (including the highest hardware priority).  Use
-@   sparingly — for fine-grained mutual exclusion, use BASEPRI instead.
+@   sparingly; for fine-grained mutual exclusion, use BASEPRI instead.
 @   Returns previous PRIMASK in r0 so nested sections compose.
 @ ----------------------------------------------------------------------------
     .section .text.critical_enter, "ax"

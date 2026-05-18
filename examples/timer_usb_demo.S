@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -17,7 +17,7 @@
 @   * TIMER0 ALARM0 fires every 500 ms.  The ISR toggles GP25 and bumps
 @     a `tick_pending` flag.  Main loop polls the flag, sends "tick N\r\n"
 @     over USB CDC, sleeps in wfi.
-@   * USB CDC enumerates as /dev/ttyACM0 (rp-asm M3-B alarm).
+@   * USB CDC enumerates as /dev/ttyACM0 (ticktrace M3-B alarm).
 @
 @ Verify (on a Linux host):
 @   make build/timer_usb_demo_flash.uf2
@@ -49,7 +49,7 @@ tick_pending:   .word 0
 tick_count:     .word 0
 
     .section .rodata.timer_usb, "a"
-banner_uart:    .asciz "rp-asm M3-B - timer alarm + USB CDC verification\r\n"
+banner_uart:    .asciz "ticktrace M3-B - timer alarm + USB CDC verification\r\n"
 prefix_tick:    .asciz "tick "
 prefix_hb:      .asciz "hb "
 prefix_t:       .asciz " t="

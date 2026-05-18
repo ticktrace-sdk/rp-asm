@@ -1,6 +1,6 @@
 # Commercial Licensing
 
-The Amken RP2350 Assembly SDK is dual-licensed.
+The ticktrace Assembly SDK is dual-licensed.
 
 The default license for this software is the **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**. The full text is in the [LICENSE](./LICENSE) file at the root of this repository. This license is well suited to open-source projects, academic use, evaluation, and personal projects.
 
@@ -54,7 +54,7 @@ To request a quotation or to start a discussion, please contact:
 Springfield, Virginia 22151
 United States
 Email: **[email protected]**
-Web: **https://amken.io**
+Web: **https://www.amken.us**
 
 Please include in your initial enquiry:
 

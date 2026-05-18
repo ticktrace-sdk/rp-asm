@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -43,7 +43,7 @@ digest_buf: .space 32
 
     .section .rodata.data_usb, "a"
     .align   2
-banner_uart:    .asciz "rp-asm M5 - ADC + TRNG + SHA256 verification\r\n"
+banner_uart:    .asciz "ticktrace M5 - ADC + TRNG + SHA256 verification\r\n"
 
 prefix_iter:    .asciz "--- iter "
 prefix_adc:     .asciz "adc temp="

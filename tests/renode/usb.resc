@@ -1,4 +1,4 @@
-:name: rp-asm M4-H USB CDC echo demo
+:name: ticktrace M4-H USB CDC echo demo
 :description: Loads build/usb_cdc_echo_demo.elf onto the simulated RP2350,
 :             runs for 50 ms, asserts the firmware reached
 :             usb_device_init's MAIN_CTRL = CONTROLLER_EN store.

@@ -1,4 +1,4 @@
-:name: rp-asm M4-F I2C EEPROM demo
+:name: ticktrace M4-F I2C EEPROM demo
 :description: Loads build/i2c_eeprom_demo.elf, runs ~100 ms simulated, and
 :             dumps UART0.  Asserts (via tests/renode/run.sh) that the
 :             firmware printed the EEPROM read-back banner.

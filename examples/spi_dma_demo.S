@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -23,7 +23,7 @@
 @
 @ Build:    make build/spi_dma_demo.uf2
 @ Verify:   115200 8N1; expect
-@             rp-asm M4-G: SPI0 DMA loopback demo
+@             ticktrace M4-G: SPI0 DMA loopback demo
 @             spi-dma OK
 @           Or "spi-dma FAIL N" with N = mismatched bytes.
 @ =============================================================================
@@ -52,7 +52,7 @@ spi_dma_src:
 @ ---- Banners ---------------------------------------------------------------
     .section .rodata.spi_dma_banners, "a"
 banner_intro:
-    .asciz "rp-asm M4-G: SPI0 DMA loopback demo\r\n"
+    .asciz "ticktrace M4-G: SPI0 DMA loopback demo\r\n"
 banner_pass:
     .asciz "spi-dma OK\r\n"
 banner_fail_pre:

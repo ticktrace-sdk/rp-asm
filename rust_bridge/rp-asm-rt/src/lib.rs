@@ -1,4 +1,4 @@
-//! rp-asm-rt — runtime helpers for rp-asm Rust apps.
+//! rp-asm-rt: runtime helpers for ticktrace Rust apps.
 //!
 //! Provides:
 //! - A `#[global_allocator]` implementation (bump allocator) so crates
@@ -94,7 +94,7 @@ pub fn heap_capacity() -> usize {
 // ============================================================================
 //
 // Wraps a user `fn() -> !` (signature must be `pub fn <name>() -> !`) as the
-// `main` symbol rp-asm's startup.S calls.  Runs _c_runtime_init first so
+// `main` symbol ticktrace's startup.S calls.  Runs _c_runtime_init first so
 // .bss is zeroed before any Rust static is read.
 //
 // Usage:
@@ -119,7 +119,7 @@ macro_rules! entry {
 // ============================================================================
 //
 // Opt-in: add `panic-halt` or your own #[panic_handler] in the app crate.
-// We don't define one here because the panic handler is a singleton — if
+// We don't define one here because the panic handler is a singleton; if
 // rp-asm-rt provided one, every app would have to opt out.  Instead we
 // expose a function the user's panic handler can call.
 

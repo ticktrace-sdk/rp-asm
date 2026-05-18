@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -59,7 +59,7 @@ iter_count:     .word 0
 c1_iter:        .word 0
 
     .section .rodata.mc_full_usb, "a"
-banner_uart:    .asciz "rp-asm M6 - spinlock + mailbox + interp verification\r\n"
+banner_uart:    .asciz "ticktrace M6 - spinlock + mailbox + interp verification\r\n"
 prefix_c0:      .asciz "c0 iter="
 mid_spin:       .asciz " spin="
 mid_mbox:       .asciz " mbox="

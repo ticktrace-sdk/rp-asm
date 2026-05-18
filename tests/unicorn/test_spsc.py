@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Copyright (C) 2026 Amken LLC <https://amken.io>
+# Copyright (C) 2026 Amken LLC <https://www.amken.us>
 #
-# This file is part of the Amken RP2350 Assembly SDK.
+# This file is part of the ticktrace Assembly SDK.
 # Licensed under AGPL-3.0-or-later; commercial license available.
 # See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -158,7 +158,7 @@ def test_wraparound_works(fixture_elf):
     for v in range(8):
         _call(sim, "spsc_byte_pop", _q(sim))
         assert sim.uc.reg_read(UC_ARM_REG_R0) == v
-    # Push 8 more — they should land past the wrap
+    # Push 8 more; they should land past the wrap
     for v in range(20, 28):
         _call(sim, "spsc_byte_push", _q(sim), v)
         assert sim.uc.reg_read(UC_ARM_REG_R0) == 1

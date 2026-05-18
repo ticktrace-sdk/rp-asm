@@ -9,7 +9,7 @@ pico_sdk_init()
 
 add_executable(bench_minimum main.c)
 
-# Match rp-asm's "every cycle matters" intent: release with LTO + -Os for
+# Match ticktrace's "every cycle matters" intent: release with LTO + -Os for
 # the smallest binary.  Drop -Os to -O3 for the throughput benches.
 target_compile_options(bench_minimum PRIVATE -Os -flto)
 target_link_options(bench_minimum PRIVATE -flto)

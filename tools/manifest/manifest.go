@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-// Copyright (C) 2026 Amken LLC <https://amken.io>
+// Copyright (C) 2026 Amken LLC <https://www.amken.us>
 //
-// This file is part of the Amken RP2350 Assembly SDK.
+// This file is part of the ticktrace Assembly SDK.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,7 @@
 // A commercial license is available from Amken LLC for use cases that
 // cannot comply with the AGPL. See COMMERCIAL-LICENSE.md.
 
-// Package manifest serialises the rp-asm bootloader slot footer.
+// Package manifest serialises the ticktrace bootloader slot footer.
 //
 // The layout matches include/bootloader.inc byte-for-byte. Any change here
 // requires the corresponding change there and a rebuild of any flashed
@@ -42,7 +42,7 @@ const (
 	// [slot_base, slot_base + PayloadSize).
 	Footer = 256
 
-	// Magic is little-endian "RPBL" — sentinel that every footer starts with.
+	// Magic is little-endian "RPBL"; sentinel that every footer starts with.
 	Magic uint32 = 0x4C425052
 
 	// FormatVersion is the current footer layout version.
@@ -112,7 +112,7 @@ func (f FooterData) Marshal() []byte {
 }
 
 // Unmarshal parses a 256-byte footer. It verifies the magic and version
-// but does not (re)compute the CRC/digest — callers needing integrity
+// but does not (re)compute the CRC/digest; callers needing integrity
 // validation should call Verify with the payload.
 func Unmarshal(b []byte) (FooterData, error) {
 	if len(b) != Footer {

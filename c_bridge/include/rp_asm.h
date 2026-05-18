@@ -1,14 +1,14 @@
 /* =============================================================================
- * rp_asm.h - C declarations for every public rp-asm driver function.
+ * rp_asm.h - C declarations for every public ticktrace driver function.
  *
- * One-stop header for C apps that want to use the rp-asm core.  Every
+ * One-stop header for C apps that want to use the ticktrace core.  Every
  * function listed here is defined in the corresponding asm source file
  * (under src/) and follows AAPCS, so C call-sites work directly.
  *
  * Include this once from your C app:
  *     #include "rp_asm.h"
  *
- * Link against the rp-asm static archive (see c_bridge/Makefile.frag).
+ * Link against the ticktrace static archive (see c_bridge/Makefile.frag).
  * ============================================================================= */
 
 #ifndef RP_ASM_H

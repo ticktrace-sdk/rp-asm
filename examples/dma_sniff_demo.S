@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -20,7 +20,7 @@
 @
 @ Build:    make examples/dma_sniff_demo.uf2  ->  build/dma_sniff_demo.uf2
 @ Verify:   115200 8N1 on GP0; expect
-@             rp-asm M3-C: DMA sniff demo
+@             ticktrace M3-C: DMA sniff demo
 @             CRC32 = 0xXXXXXXXX
 @ =============================================================================
 
@@ -51,7 +51,7 @@ sniff_dst:
 @ ---- Banners --------------------------------------------------------------
     .section .rodata.banners, "a"
 banner_intro:
-    .asciz "rp-asm M3-C: DMA sniff demo\r\n"
+    .asciz "ticktrace M3-C: DMA sniff demo\r\n"
 banner_crc:
     .asciz "CRC32 = 0x"
 banner_nl:

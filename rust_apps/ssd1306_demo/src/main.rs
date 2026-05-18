@@ -1,14 +1,14 @@
-//! ssd1306_demo — drive a 128×64 SSD1306 OLED over I2C0.
+//! ssd1306_demo: drive a 128×64 SSD1306 OLED over I2C0.
 //!
 //! Wiring:
 //!   SDA = GP4, SCL = GP5, OLED VCC = 3V3, GND = GND.
 //!   The display's I2C address is 0x3C (most boards).
 //!
 //! This app pulls the `ssd1306` and `embedded-graphics` crates from
-//! crates.io — neither of them knows about rp-asm.  They talk to the
+//! crates.io; neither of them knows about ticktrace.  They talk to the
 //! I2C bus through the `embedded_hal::i2c::I2c` trait we implement in
 //! `rp-asm-hal`.  Same crate, same source, same Cargo.toml lines as
-//! anyone else's embedded Rust project — except the underlying
+//! anyone else's embedded Rust project, except the underlying
 //! driver is asm.
 
 #![no_std]
@@ -55,7 +55,7 @@ fn app_main() -> ! {
     let _ = display.clear(BinaryColor::Off);
 
     let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-    let _ = Text::new("rp-asm + embedded-hal", Point::new(2, 12), style).draw(&mut display);
+    let _ = Text::new("ticktrace + embedded-hal", Point::new(2, 12), style).draw(&mut display);
     let _ = Text::new("ssd1306 from crates.io", Point::new(2, 28), style).draw(&mut display);
     let _ = Text::new("asm drivers underneath", Point::new(2, 44), style).draw(&mut display);
     let _ = display.flush();
@@ -70,7 +70,7 @@ fn app_main() -> ! {
 
         // Refresh the screen with a counter so we can see liveness.
         let _ = display.clear(BinaryColor::Off);
-        let _ = Text::new("rp-asm + embedded-hal", Point::new(2, 12), style).draw(&mut display);
+        let _ = Text::new("ticktrace + embedded-hal", Point::new(2, 12), style).draw(&mut display);
         let _ = Text::new("ssd1306 from crates.io", Point::new(2, 28), style).draw(&mut display);
 
         let mut buf = [0u8; 16];

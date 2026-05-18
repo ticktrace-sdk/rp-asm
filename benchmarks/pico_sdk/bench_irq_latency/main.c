@@ -1,4 +1,4 @@
-// bench_irq_latency (pico-sdk) — paired with rp-asm/bench_irq_latency.S.
+// bench_irq_latency (pico-sdk): paired with rp-asm/bench_irq_latency.S.
 //
 // Arm TIMER0 ALARM0 for "now + 1 ms"; ISR records DWT cycle delta.
 // Repeat 32×, report min/max/avg of the IRQ-entry latency portion

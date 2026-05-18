@@ -61,7 +61,7 @@ bench_emit:
     pop     {r4, r5, r6, pc}
 
 @ -----------------------------------------------------------------------------
-@ bench_standard_init() — clocks + UART, the standard prelude every bench uses.
+@ bench_standard_init(): clocks + UART, the standard prelude every bench uses.
 @ -----------------------------------------------------------------------------
     .section .text.bench_standard_init, "ax"
     .thumb_func

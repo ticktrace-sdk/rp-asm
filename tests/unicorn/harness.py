@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Copyright (C) 2026 Amken LLC <https://amken.io>
+# Copyright (C) 2026 Amken LLC <https://www.amken.us>
 #
-# This file is part of the Amken RP2350 Assembly SDK.
+# This file is part of the ticktrace Assembly SDK.
 # Licensed under AGPL-3.0-or-later; commercial license available.
 # See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
 """RP2350 Unicorn-Engine simulation harness.
 
-Tier 1 of the rp-asm test strategy: cycle-counted, deterministic execution
+Tier 1 of the ticktrace test strategy: cycle-counted, deterministic execution
 of an ELF (or flat binary) with full visibility into every MMIO transaction.
 This is where we lock the *contract* between the assembly source and the
 peripherals - what the firmware writes, in what order, with what value.

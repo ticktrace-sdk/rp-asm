@@ -1,4 +1,4 @@
-// build.rs — points cargo at librp_asm.a (built by the top-level Makefile)
+// build.rs: points cargo at librp_asm.a (built by the top-level Makefile)
 // and feeds it our SRAM linker script.
 
 use std::env;

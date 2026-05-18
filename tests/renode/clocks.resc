@@ -1,4 +1,4 @@
-:name: rp-asm M2 clocks demo
+:name: ticktrace M2 clocks demo
 :description: Loads build/clocks_demo.elf, runs for 1 simulated second, and
 :             dumps UART0 + GPIO toggle counts.
 

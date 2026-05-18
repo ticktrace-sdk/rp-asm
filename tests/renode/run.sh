@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Copyright (C) 2026 Amken LLC <https://amken.io>
+# Copyright (C) 2026 Amken LLC <https://www.amken.us>
 #
-# This file is part of the Amken RP2350 Assembly SDK.
+# This file is part of the ticktrace Assembly SDK.
 # Licensed under AGPL-3.0-or-later; commercial license available.
 # See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -20,9 +20,9 @@
 #
 # Scripts:
 #   blinky.resc  - default v0.1 firmware in build/blinky.elf
-#                  ASSERT: UART contains "rp-asm" banner, >= 4 LED toggles
+#                  ASSERT: UART contains "ticktrace" banner, >= 4 LED toggles
 #                  (since M2 the production main is the 150 MHz clocks demo;
-#                  we relaxed the banner to just "rp-asm" to cover both v0.1
+#                  we relaxed the banner to just "ticktrace" to cover both v0.1
 #                  and M2 banners)
 #   clocks.resc  - M2 clocks demo in build/clocks_demo.elf
 #                  ASSERT: UART contains "150 MHz", >= 1 LED toggle
@@ -93,8 +93,8 @@ if [ -n "${log:-}" ] && [ -f "$log" ]; then
     echo "----- blinky.resc log (last 30 lines) -----"
     tail -30 "$log"
     echo "-------------------------------------------"
-    if ! grep -q "rp-asm" "$log"; then
-        echo "FAIL: blinky.resc - UART missing 'rp-asm' banner"
+    if ! grep -q "ticktrace" "$log"; then
+        echo "FAIL: blinky.resc - UART missing 'ticktrace' banner"
         overall=1
     fi
     toggles="$(grep -c 'LED_TOGGLE' "$log" || true)"

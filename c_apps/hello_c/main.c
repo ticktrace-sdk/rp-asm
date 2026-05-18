@@ -1,7 +1,7 @@
-/* hello_c — minimum C app that uses rp-asm drivers.
+/* hello_c: minimum C app that uses ticktrace drivers.
  *
  * Demonstrates:
- *   - calling rp-asm clock + UART + GPIO drivers from C
+ *   - calling ticktrace clock + UART + GPIO drivers from C
  *   - using a C global (in .bss) that the runtime zeroes for us
  *   - a tight loop that reads DWT cycles and prints them via the
  *     existing UART driver

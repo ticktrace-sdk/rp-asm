@@ -1,4 +1,4 @@
-// build.rs — same shape as hello_rust/build.rs.  Points cargo at
+// build.rs: same shape as hello_rust/build.rs.  Points cargo at
 // librp_asm.a (built by the top-level Makefile) and uses our SRAM linker.
 
 use std::env;

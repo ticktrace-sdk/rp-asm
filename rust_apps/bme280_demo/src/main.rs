@@ -1,4 +1,4 @@
-//! bme280_demo — read a Bosch BME280 sensor over I2C, print over UART.
+//! bme280_demo: read a Bosch BME280 sensor over I2C, print over UART.
 //!
 //! Wiring:
 //!   SDA = GP4, SCL = GP5, BME280 VCC = 3V3, GND = GND.

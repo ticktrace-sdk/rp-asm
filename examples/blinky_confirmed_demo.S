@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -24,7 +24,7 @@
 @     5. Slot A (this app) calls boot_confirm, blinks slow forever.
 @
 @ Banner over UART0 distinguishes the two as well:
-@     "rp-asm slot A (confirmed, ~2 Hz)"
+@     "ticktrace slot A (confirmed, ~2 Hz)"
 @ =============================================================================
 
     .syntax unified
@@ -35,7 +35,7 @@
 
     .section .rodata.banner_confirmed, "a"
 banner_confirmed:
-    .asciz "rp-asm slot A (confirmed, ~2 Hz)\r\n"
+    .asciz "ticktrace slot A (confirmed, ~2 Hz)\r\n"
 
     .section .text.main, "ax"
     .thumb_func

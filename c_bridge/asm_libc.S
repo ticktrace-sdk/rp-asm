@@ -1,9 +1,9 @@
 @ =============================================================================
-@ c_bridge/asm_libc.S — minimal libc replacements for gcc-emitted calls.
+@ c_bridge/asm_libc.S: minimal libc replacements for gcc-emitted calls.
 @
 @ gcc lowers struct copies, large initializers, and array fills into calls
 @ to memcpy / memset / memcmp.  These are word-stride implementations
-@ tuned for Cortex-M33 — small (~50 bytes each) and cache-friendly.
+@ tuned for Cortex-M33: small (~50 bytes each) and cache-friendly.
 @
 @ All AAPCS-clean: r0 (return) = first arg, no callee-saved clobber.
 @

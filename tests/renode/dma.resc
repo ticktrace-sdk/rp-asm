@@ -1,4 +1,4 @@
-:name: rp-asm M3-C DMA memcpy demo
+:name: ticktrace M3-C DMA memcpy demo
 :description: Loads build/dma_memcpy_demo.elf, runs for 100 ms simulated, and
 :             dumps UART0 + GPIO toggle counts.
 

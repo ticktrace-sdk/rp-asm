@@ -1,4 +1,4 @@
-# rp-asm test infrastructure
+# ticktrace test infrastructure
 
 Four-tier strategy. Each tier catches a distinct class of bug; tier
 selection is a tradeoff between fidelity and speed.
@@ -71,7 +71,7 @@ sim.mock_resets_done()                            # auto-mirrors RESET <-> RESET
 tx = sim.mock_uart0_tx()                          # captures bytes written to UART0 DR
 sim.run_until_write(SIO_GPIO_OUT_XOR)
 assert sim.writes[0].addr == RESETS_RESET_CLR
-assert bytes(tx).startswith(b"rp-asm v0.1")
+assert bytes(tx).startswith(b"ticktrace v0.1")
 ```
 
 What it gives you:

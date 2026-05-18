@@ -1,13 +1,13 @@
 @ =============================================================================
-@ bench_minimum.S — smallest blinker that still uses the SDK's boot path.
+@ bench_minimum.S: smallest blinker that still uses the SDK's boot path.
 @
-@ Measurement: `arm-none-eabi-size build/bench_minimum.elf` — compare the
+@ Measurement: `arm-none-eabi-size build/bench_minimum.elf`; compare the
 @ .text + .rodata total to the pico-sdk equivalent (benchmarks/pico_sdk/
 @ bench_minimum).
 @
 @ No UART, no clock setup beyond the default bootrom hand-off (XOSC 12 MHz).
 @ Just blink GP25 in a CPU-cycle busy loop. The point of this bench is
-@ purely to measure how small "minimum viable" can get — runtime cycle
+@ purely to measure how small "minimum viable" can get; runtime cycle
 @ counts aren't interesting here (the loop is calibrated to look like
 @ blinking, not to match wall-clock).
 @ =============================================================================

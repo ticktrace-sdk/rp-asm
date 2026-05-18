@@ -1,4 +1,4 @@
-:name: rp-asm M4-E UART loopback
+:name: ticktrace M4-E UART loopback
 :description: Loads build/uart_loopback_demo.elf, cross-wires UART0 <-> UART1
 :             via Renode's UARTHub, runs for 200 ms simulated, and dumps both
 :             UART history buffers.

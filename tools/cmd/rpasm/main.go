@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-// Copyright (C) 2026 Amken LLC <https://amken.io>
+// Copyright (C) 2026 Amken LLC <https://www.amken.us>
 //
-// This file is part of the Amken RP2350 Assembly SDK.
+// This file is part of the ticktrace Assembly SDK.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,7 @@
 // A commercial license is available from Amken LLC for use cases that
 // cannot comply with the AGPL. See COMMERCIAL-LICENSE.md.
 
-// Command rpasm is the rp-asm developer tool. It bundles every host-side
+// Command rpasm is the ticktrace developer tool. It bundles every host-side
 // utility the SDK needs (UF2 packing, slot-header manifests, firmware image
 // concatenation, USB CDC DFU client) into a single static binary so users
 // don't have to chase Python deps.
@@ -40,7 +40,7 @@ import (
 	"os"
 )
 
-const usage = `rpasm - rp-asm developer tool
+const usage = `rpasm - ticktrace developer tool
 
 usage: rpasm <command> [args]
 

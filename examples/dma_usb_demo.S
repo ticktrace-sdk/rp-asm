@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -60,7 +60,7 @@ src_pattern:
 src_pattern_end:
 
     .section .rodata.dma_usb, "a"
-banner_uart: .asciz "rp-asm M3-C - DMA mem2mem + USB CDC verification\r\n"
+banner_uart: .asciz "ticktrace M3-C - DMA mem2mem + USB CDC verification\r\n"
 prefix_ok:   .asciz "dma OK words="
 mid_iter:    .asciz " iter="
 prefix_fail: .asciz "dma FAIL off="

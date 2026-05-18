@@ -1,8 +1,8 @@
 @ SPDX-License-Identifier: AGPL-3.0-or-later
 @
-@ Copyright (C) 2026 Amken LLC <https://amken.io>
+@ Copyright (C) 2026 Amken LLC <https://www.amken.us>
 @
-@ This file is part of the Amken RP2350 Assembly SDK.
+@ This file is part of the ticktrace Assembly SDK.
 @ Licensed under AGPL-3.0-or-later; commercial license available.
 @ See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
@@ -19,7 +19,7 @@
 @   6. watchdog_disable               -> explicit safe state
 @   7. gpio_led_init / uart0_init     -> reuse v0.1 drivers
 @   8. clocks_post_pll_uart_baud_fixup-> retune IBRD/FBRD for 150 MHz
-@   9. uart0_puts(banner)             -> "rp-asm M2 - clk_sys = 150 MHz\r\n"
+@   9. uart0_puts(banner)             -> "ticktrace M2 - clk_sys = 150 MHz\r\n"
 @  10. forever: toggle LED + busy-loop ~250 ms
 @
 @ Cycle math for the busy loop:
@@ -35,7 +35,7 @@
 
     .section .rodata.banner, "a"
 banner:
-    .asciz "rp-asm M2 - clk_sys = 150 MHz\r\n"
+    .asciz "ticktrace M2 - clk_sys = 150 MHz\r\n"
 
     .section .text.main, "ax"
     .thumb_func

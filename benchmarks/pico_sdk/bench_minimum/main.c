@@ -1,4 +1,4 @@
-// bench_minimum (pico-sdk) — equivalent of benchmarks/rp_asm/bench_minimum.S.
+// bench_minimum (pico-sdk): equivalent of benchmarks/rp_asm/bench_minimum.S.
 //
 // Just blink GP25.  Image-size comparison only; no UART, no DWT readout.
 // `arm-none-eabi-size build/bench_minimum.elf` after `make` is the

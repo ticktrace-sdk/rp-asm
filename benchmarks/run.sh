@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Copyright (C) 2026 Amken LLC <https://amken.io>
+# Copyright (C) 2026 Amken LLC <https://www.amken.us>
 #
-# This file is part of the Amken RP2350 Assembly SDK.
+# This file is part of the ticktrace Assembly SDK.
 # Licensed under AGPL-3.0-or-later; commercial license available.
 # See LICENSE and COMMERCIAL-LICENSE.md in the root of this repository.
 
-# benchmarks/run.sh — flash a UF2 and capture BENCH lines from UART0.
+# benchmarks/run.sh: flash a UF2 and capture BENCH lines from UART0.
 #
 # Usage:
 #   benchmarks/run.sh <path/to/bench.uf2> <serial_device> [seconds=5]
