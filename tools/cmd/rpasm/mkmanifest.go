@@ -29,7 +29,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/amken3d/rp-asm/tools/manifest"
+	"github.com/ticktrace-sdk/rp-asm/tools/manifest"
 )
 
 const mkmanifestUsage = `usage: rpasm mkmanifest <input.bin> -o <output.footer.bin> [flags]

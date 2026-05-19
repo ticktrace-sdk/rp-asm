@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/amken3d/rp-asm/tools/firmware"
+	"github.com/ticktrace-sdk/rp-asm/tools/firmware"
 )
 
 const mkfirmwareUsage = `usage: rpasm mkfirmware -o <output.uf2> <addr>:<file.bin> [<addr>:<file.bin> ...]

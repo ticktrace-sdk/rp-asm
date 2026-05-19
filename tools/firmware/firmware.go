@@ -35,7 +35,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/amken3d/rp-asm/tools/internal/uf2"
+	"github.com/ticktrace-sdk/rp-asm/tools/internal/uf2"
 )
 
 // Piece is a contiguous binary segment loaded at LoadAddr.

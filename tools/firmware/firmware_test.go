@@ -28,7 +28,7 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/amken3d/rp-asm/tools/internal/uf2"
+	"github.com/ticktrace-sdk/rp-asm/tools/internal/uf2"
 )
 
 func TestPackTwoPieces(t *testing.T) {

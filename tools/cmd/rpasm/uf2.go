@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/amken3d/rp-asm/tools/internal/uf2"
+	"github.com/ticktrace-sdk/rp-asm/tools/internal/uf2"
 )
 
 const uf2Usage = `usage: rpasm uf2 pack <input.bin> <base_addr> <output.uf2>
