@@ -1,6 +1,6 @@
 # ticktrace
 
-[www.ticktrace.io] (www.ticktrace.io)
+[www.ticktrace.io](www.ticktrace.io)
 
 Pure-assembly firmware SDK for the Raspberry Pi RP2350 (Cortex-M33).  
 **Every cycle matters.**
