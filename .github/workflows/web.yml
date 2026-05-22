@@ -1,8 +1,12 @@
 name: web
 
+# The web/ static-site source isn't in the repo yet — this workflow is
+# kept scaffolded for when it is. Until then, trigger only on manual
+# workflow_dispatch so the repo's public CI badges stay green.
 on:
   workflow_dispatch:
 
+jobs:
   build:
     name: build (static export)
     runs-on: ubuntu-latest
