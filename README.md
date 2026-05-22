@@ -1,11 +1,59 @@
 # ticktrace
 
-[www.ticktrace.io](www.ticktrace.io)
-
-Pure-assembly firmware SDK for the Raspberry Pi RP2350 (Cortex-M33).  
+Pure-assembly firmware SDK for the Raspberry Pi RP2350 (Cortex-M33).
 **Every cycle matters.**
 
-No C compiler required. Firmware is assembled with `arm-none-eabi-as` and linked with `arm-none-eabi-ld`. The result is a UF2 you drag onto the Pico 2 — or flash in one command with [ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio).
+- **No C compiler.** Firmware is assembled with `arm-none-eabi-as` and linked with `arm-none-eabi-ld`. The result is a UF2 you drag onto the Pico 2.
+- **1.2 KB blinky.** Default driver set, full clock-tree bring-up, UART banner, dual-core ready — `.text` section is 1192 bytes.
+- **5.6 MB toolchain.** A minimal binutils-only build. No `gcc`, no `newlib`, no `libstdc++` — the SDK has nothing to feed them.
+- **Verified on silicon.** 283 Unicorn-emulator tests + QEMU ISA tests + Renode platform tests, plus hardware bring-up on a Pico 2.
+- **Dual-licensed.** [AGPL-3.0-or-later](LICENSE) for open-source, personal, educational, and evaluation use. A [commercial license](COMMERCIAL-LICENSE.md) is available from Amken LLC for proprietary firmware that can't comply with the AGPL.
+
+Build a UF2 with one line on Mac, Windows, or Linux:
+
+```sh
+docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:slim
+```
+
+For a GUI, download [ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio/releases) - it bundles the toolchain and flashes the Pico for you in one click.
+
+[www.ticktrace.io](https://www.ticktrace.io) · [Studio](https://github.com/ticktrace-sdk/ticktrace-studio) · [Docs](docs/)
+
+## What blinky looks like
+
+The entire `main` function of the default firmware — clock-tree bring-up, UART banner, blinking LED. Every cycle accounted for, every line a deliberate operation. This is the actual source ([src/main.S](src/main.S)):
+
+```asm
+    .thumb_func
+    .global main
+main:
+    @ ---- Clock tree bring-up ---------------------------------------------
+    bl      xosc_init                       @ XOSC stable
+    bl      pll_sys_150_mhz                 @ pll_sys = 150 MHz
+    bl      pll_usb_48_mhz                  @ pll_usb = 48 MHz
+    bl      clocks_init                     @ wire muxes
+    bl      tick_init                       @ 1 MHz tick to TIMER0/1/WDG
+    bl      watchdog_disable                @ explicit safe state
+
+    @ ---- Peripheral init at the new clock rate ---------------------------
+    bl      gpio_led_init                   @ LED on GP25
+    bl      uart0_init                      @ wrong baud (computed for 12 MHz)
+    bl      clocks_post_pll_uart_baud_fixup @ fix to 150 MHz divisors
+
+    ldr     r0, =banner
+    bl      uart0_puts
+
+.Lloop:
+    bl      gpio_led_toggle
+
+    @ 3-cycle inner body (subs + bne) at 150 MHz = 20 ns / iteration.
+    @ DELAY_COUNT = 12_500_000 -> 250 ms half-period -> ~2 Hz blink.
+    ldr     r0, =DELAY_COUNT_150MHZ
+1:  subs    r0, #1
+    bne     1b
+
+    b       .Lloop
+```
 
 ## What's included
 
@@ -65,7 +113,11 @@ make test     # run emulator tests
 
 ### GUI (any platform)
 
-[ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio) is a one-download GUI that handles the toolchain, builds, and flashes the Pico for you. Pick a recipe from the catalog, click **Build & Flash**, done.
+[ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio/releases) is a one-download GUI that handles the toolchain, builds, and flashes the Pico for you. Pick a recipe from the catalog, click **Build & Flash**, done.
+
+![ticktrace Studio — examples catalog, board autodetect, one-click Build & Flash](docs/images/studio-examples.png)
+
+Studio first-launches and asks if you want a managed toolchain. If you say yes, it downloads a [5.6 MB minimal binutils build](https://github.com/ticktrace-sdk/binutils-arm-none-eabi) into `~/.ticktrace/toolchain/` — no compiler, no `newlib`, just the binutils the SDK actually uses.
 
 ## Flash
 
@@ -84,10 +136,6 @@ make build/<example>_flash.uf2       # any example
 ```
 
 After flashing, open a serial terminal at **115200 8N1** on UART0 TX (GP0, pin 1).
-
-## ticktrace Studio
-
-For a GUI with a catalog browser, one-click build and flash, and a memory map view, see [ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio).
 
 ## Repository layout
 
@@ -142,4 +190,9 @@ Start with `docs/apps.md` — it walks through writing your first app from scrat
 
 ## License
 
-AGPL-3.0-or-later. A commercial license is available from Amken LLC — see [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md).
+ticktrace is dual-licensed.
+
+- **[AGPL-3.0-or-later](LICENSE)** for open-source, personal, educational, and evaluation use. If you're hacking on a hobby project or building something you'll open-source under a compatible license, you're set.
+- **Commercial license** from Amken LLC for closed-source products that ship `arm-none-eabi-as`-assembled firmware built with these drivers. See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md).
+
+The commercial license funds full-time maintenance and silicon verification. Same approach as MySQL and Qt: free for the community, paid for the enterprise.
