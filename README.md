@@ -4,8 +4,8 @@ Pure-assembly firmware SDK for the Raspberry Pi RP2350 (Cortex-M33).
 **Every cycle matters.**
 
 - **No C compiler.** Firmware is assembled with `arm-none-eabi-as` and linked with `arm-none-eabi-ld`. The result is a UF2 you drag onto the Pico 2.
-- **1.2 KB blinky.** Default driver set, full clock-tree bring-up, UART banner, dual-core ready — `.text` section is 1192 bytes.
-- **5.6 MB toolchain.** A minimal binutils-only build. No `gcc`, no `newlib`, no `libstdc++` — the SDK has nothing to feed them.
+- **1.2 KB blinky.** Default driver set, full clock-tree bring-up, UART banner, dual-core ready. The `.text` section is 1192 bytes.
+- **5.6 MB toolchain.** A minimal binutils-only build. No `gcc`, no `newlib`, no `libstdc++`. The SDK has nothing to feed them.
 - **Verified on silicon.** 283 Unicorn-emulator tests + QEMU ISA tests + Renode platform tests, plus hardware bring-up on a Pico 2.
 - **Dual-licensed.** [AGPL-3.0-or-later](LICENSE) for open-source, personal, educational, and evaluation use. A [commercial license](COMMERCIAL-LICENSE.md) is available from Amken LLC for proprietary firmware that can't comply with the AGPL.
 
@@ -15,15 +15,15 @@ Build a UF2 with one line on Mac, Windows, or Linux:
 docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:slim
 ```
 
-For a GUI, download [ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio/releases) - it bundles the toolchain and flashes the Pico for you in one click.
+For a GUI, download [ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio/releases). It bundles the toolchain and flashes the Pico for you in one click.
 
-![ticktrace Studio: pick an example, build, flash the Pico, see the binary land at 5 KB of SRAM — 20 seconds, no terminal](docs/images/studio-demo.gif)
+![ticktrace Studio: pick an example, build, flash the Pico, see the binary land at 5 KB of SRAM in 20 seconds without a terminal](docs/images/studio-demo.gif)
 
 [www.ticktrace.io](https://www.ticktrace.io) · [Studio](https://github.com/ticktrace-sdk/ticktrace-studio) · [Docs](docs/)
 
 ## What blinky looks like
 
-The entire `main` function of the default firmware — clock-tree bring-up, UART banner, blinking LED. Every cycle accounted for, every line a deliberate operation. This is the actual source ([src/main.S](src/main.S)):
+The entire `main` function of the default firmware: clock-tree bring-up, UART banner, blinking LED. Every cycle accounted for, every line a deliberate operation. This is the actual source ([src/main.S](src/main.S)):
 
 ```asm
     .thumb_func
@@ -59,7 +59,7 @@ main:
 
 ## What's included
 
-**Peripheral drivers** — each is a plain Thumb-2 AAPCS function you call directly from your assembly:
+**Peripheral drivers.** Each is a plain Thumb-2 AAPCS function you call directly from your assembly:
 
 | Peripheral | What you get |
 |------------|-------------|
@@ -67,7 +67,7 @@ main:
 | UART | Full PL011, 115200 8N1 out of the box |
 | I2C | DesignWare I2C0/1, master + slave |
 | SPI | PL022, full duplex, DMA chained |
-| USB | Device CDC-ACM — plug in and get a serial port |
+| USB | Device CDC-ACM, plug in and get a serial port |
 | DMA | 16-channel, mem-to-mem and peripheral |
 | PWM | 12-slice, freq/duty helpers, servo cookbook |
 | Timers | TIMER0/1, SysTick, NVIC plumbing |
@@ -82,19 +82,19 @@ main:
 | C bridge | Write your app in C; drivers stay assembly |
 | Rust bridge | `no_std` Rust apps via `rp-asm-sys` crate |
 
-**51 examples** in `examples/` — one per peripheral, each builds to its own UF2.
+**51 examples** in `examples/` provide a clear usage pattern for each peripheral and subsystem. Each builds to its own UF2.
 
 **Tests:** 283 T1 (Unicorn emulator) + QEMU ISA smoke tests + Renode platform tests, all green. Every public driver function has at least one register-trace assertion.
 
 ## Quickstart
 
-### With Docker (Mac / Windows / Linux — no install)
+### With Docker (Mac, Windows, Linux: no install)
 
 ```sh
 docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:slim
 ```
 
-That builds `blinky.uf2` and every example into `./build/`. Same command, same result on every platform — no toolchain to install.
+That builds `blinky.uf2` and every example into `./build/`. Same command, same result on every platform. No toolchain to install.
 
 To run the test suite (T1 Unicorn + T2 QEMU + Go tool tests):
 
@@ -117,20 +117,20 @@ make test     # run emulator tests
 
 [ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio/releases) is a one-download GUI that handles the toolchain, builds, and flashes the Pico for you. Pick a recipe from the catalog, click **Build & Flash**, done.
 
-![ticktrace Studio — examples catalog, board autodetect, one-click Build & Flash](docs/images/studio-examples.png)
+![ticktrace Studio: examples catalog, board autodetect, one-click Build and Flash](docs/images/studio-examples.png)
 
-Studio first-launches and asks if you want a managed toolchain. If you say yes, it downloads a [5.6 MB minimal binutils build](https://github.com/ticktrace-sdk/binutils-arm-none-eabi) into `~/.ticktrace/toolchain/` — no compiler, no `newlib`, just the binutils the SDK actually uses.
+Studio first-launches and asks if you want a managed toolchain. If you say yes, it downloads a [5.6 MB minimal binutils build](https://github.com/ticktrace-sdk/binutils-arm-none-eabi) into `~/.ticktrace/toolchain/`. No compiler, no `newlib`, just the binutils the SDK actually uses.
 
 ## Flash
 
-Hold **BOOTSEL** on your Pico 2 while plugging in USB. The board mounts as a USB drive — drag any `.uf2` onto it.
+Hold **BOOTSEL** on your Pico 2 while plugging in USB. The board mounts as a USB drive. Drag any `.uf2` onto it.
 
 Two image variants are available for every example:
 
 | File | Where it runs | Survives power loss? |
 |------|---------------|----------------------|
-| `build/<name>.uf2` | SRAM at `0x20000000` | No — fast iteration |
-| `build/<name>_flash.uf2` | Flash at `0x10000000` | Yes — shipped firmware |
+| `build/<name>.uf2` | SRAM at `0x20000000` | No, fast iteration |
+| `build/<name>_flash.uf2` | Flash at `0x10000000` | Yes, shipped firmware |
 
 ```sh
 make build/blinky_flash.uf2          # build a specific flash image
@@ -155,7 +155,7 @@ Makefile                   build + test umbrella
 
 ## Documentation
 
-Start with `docs/apps.md` — it walks through writing your first app from scratch. Then `docs/calling.md` for the AAPCS calling conventions everything else follows.
+Start with `docs/apps.md`. It walks through writing your first app from scratch. Then `docs/calling.md` for the AAPCS calling conventions everything else follows.
 
 | Doc | Covers |
 |-----|--------|
@@ -185,7 +185,7 @@ Start with `docs/apps.md` — it walks through writing your first app from scrat
 
 ## Design notes
 
-- **Atomic aliases.** Every peripheral write uses the `+0x2000` SET / `+0x3000` CLR / `+0x1000` XOR aliases — one `STR`, two cycles, no scratch register, no ISR race.
+- **Atomic aliases.** Every peripheral write uses the `+0x2000` SET / `+0x3000` CLR / `+0x1000` XOR aliases: one `STR`, two cycles, no scratch register, no ISR race.
 - **Pad isolation.** RP2350 pads reset with `ISO=1`. Every driver that touches a pin clears `ISO|OD` via the PADS_BANK0 CLR alias.
 - **AAPCS throughout.** All drivers are plain Thumb-2 functions that compose freely. Drivers can be called from C or Rust without a wrapper layer.
 - **Image size.** `build/blinky.uf2` is ~1.2 KB of `.text` with the full default driver set. Each example UF2 is under 4 KB because it links only the drivers it needs.
