@@ -7,7 +7,7 @@ Pure-assembly firmware SDK for the Raspberry Pi RP2350 (Cortex-M33).
 - **1.2 KB blinky.** Default driver set, full clock-tree bring-up, UART banner, dual-core ready. The `.text` section is 1192 bytes.
 - **5.6 MB toolchain.** A minimal binutils-only build. No `gcc`, no `newlib`, no `libstdc++`. The SDK has nothing to feed them.
 - **Verified on silicon.** 283 Unicorn-emulator tests + QEMU ISA tests + Renode platform tests, plus hardware bring-up on a Pico 2.
-- **Dual-licensed.** [AGPL-3.0-or-later](LICENSE) for open-source, personal, educational, and evaluation use. A [commercial license](COMMERCIAL-LICENSE.md) is available from Amken LLC for proprietary firmware that can't comply with the AGPL.
+- **Dual-licensed.** [AGPL-3.0-or-later](LICENSE) for open-source, personal, educational, and evaluation use. A [commercial license](COMMERCIAL-LICENSE.md) is available from Amken LLC for proprietary firmware that can't comply with the AGPL. Contact [licensing@ticktrace.io](mailto:licensing@ticktrace.io).
 
 Build a UF2 with one line on Mac, Windows, or Linux:
 
@@ -195,6 +195,6 @@ Start with `docs/apps.md`. It walks through writing your first app from scratch.
 ticktrace is dual-licensed.
 
 - **[AGPL-3.0-or-later](LICENSE)** for open-source, personal, educational, and evaluation use. If you're hacking on a hobby project or building something you'll open-source under a compatible license, you're set.
-- **Commercial license** from Amken LLC for closed-source products that ship `arm-none-eabi-as`-assembled firmware built with these drivers. See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md).
+- **Commercial license** from Amken LLC for closed-source products that ship `arm-none-eabi-as`-assembled firmware built with these drivers. See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md), or email [licensing@ticktrace.io](mailto:licensing@ticktrace.io).
 
 The commercial license funds full-time maintenance and silicon verification. Same approach as MySQL and Qt: free for the community, paid for the enterprise.

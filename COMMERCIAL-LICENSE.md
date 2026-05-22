@@ -53,7 +53,7 @@ To request a quotation or to start a discussion, please contact:
 **Amken LLC**
 Springfield, Virginia 22151
 United States
-Email: **[email protected]**
+Email: **[licensing@ticktrace.io](mailto:licensing@ticktrace.io)**
 Web: **https://www.amken.us**
 
 Please include in your initial enquiry:
