@@ -1,0 +1,36 @@
+# Keep the build context small. Anything not needed at image build time
+# stays out; the source tree is volume-mounted at run time anyway.
+
+# Build artefacts.
+build/
+*.o
+*.elf
+*.uf2
+*.bin
+*.map
+
+# Python venv used for tests on the host.
+.venv/
+__pycache__/
+*.pyc
+
+# Go build caches (only relevant inside tools/, but cheap to exclude here).
+**/.cache/
+tools/build/
+
+# Editor / IDE / OS junk.
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# VCS - we copy source into the image only when extending it; the SDK
+# itself is always volume-mounted, so .git in the context just bloats it.
+.git/
+.gitignore
+.gitattributes
+
+# CI / Docker metadata we don't need inside the image.
+.github/
+Dockerfile
+.dockerignore

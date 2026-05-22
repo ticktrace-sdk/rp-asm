@@ -32,23 +32,40 @@ No C compiler required. Firmware is assembled with `arm-none-eabi-as` and linked
 | C bridge | Write your app in C; drivers stay assembly |
 | Rust bridge | `no_std` Rust apps via `rp-asm-sys` crate |
 
-**49 examples** in `examples/` — one per peripheral, each builds to its own UF2.
+**51 examples** in `examples/` — one per peripheral, each builds to its own UF2.
 
-**Tests:** 278 T1 (Unicorn emulator) + QEMU ISA smoke tests + Renode platform tests, all green. Every public driver function has at least one register-trace assertion.
+**Tests:** 283 T1 (Unicorn emulator) + QEMU ISA smoke tests + Renode platform tests, all green. Every public driver function has at least one register-trace assertion.
 
-## Requirements
+## Quickstart
+
+### With Docker (Mac / Windows / Linux — no install)
+
+```sh
+docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:slim
+```
+
+That builds `blinky.uf2` and every example into `./build/`. Same command, same result on every platform — no toolchain to install.
+
+To run the test suite (T1 Unicorn + T2 QEMU + Go tool tests):
+
+```sh
+docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:full make test
+```
+
+Linux users whose UID isn't 1000 should add `--user $(id -u):$(id -g)` so build artefacts aren't root-owned.
+
+### Native (Linux)
 
 ```sh
 sudo apt install binutils-arm-none-eabi python3 python3-venv
-```
-
-## Build
-
-```sh
 make pydeps   # one-time: create .venv and install test dependencies
 make          # builds blinky.uf2 + all examples
 make test     # run emulator tests
 ```
+
+### GUI (any platform)
+
+[ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio) is a one-download GUI that handles the toolchain, builds, and flashes the Pico for you. Pick a recipe from the catalog, click **Build & Flash**, done.
 
 ## Flash
 
