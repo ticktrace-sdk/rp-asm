@@ -17,6 +17,8 @@ docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:slim
 
 For a GUI, download [ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio/releases) - it bundles the toolchain and flashes the Pico for you in one click.
 
+![ticktrace Studio: pick an example, build, flash the Pico, see the binary land at 5 KB of SRAM — 20 seconds, no terminal](docs/images/studio-demo.gif)
+
 [www.ticktrace.io](https://www.ticktrace.io) · [Studio](https://github.com/ticktrace-sdk/ticktrace-studio) · [Docs](docs/)
 
 ## What blinky looks like
