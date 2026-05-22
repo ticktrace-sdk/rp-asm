@@ -1,23 +1,8 @@
 name: web
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'web/**'
-      - 'book/**'
-      - 'docs/**'
-      - 'examples/**'
-      - '.github/workflows/web.yml'
-  pull_request:
-    paths:
-      - 'web/**'
-      - 'book/**'
-      - 'docs/**'
-      - 'examples/**'
   workflow_dispatch:
 
-jobs:
   build:
     name: build (static export)
     runs-on: ubuntu-latest
