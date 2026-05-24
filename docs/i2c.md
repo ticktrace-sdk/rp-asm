@@ -1,4 +1,4 @@
-# I2C (M4-F)
+# I2C 
 
 Two-wire serial bus controller.  RP2350 has **two instances** of the
 Synopsys DesignWare DW_apb_i2c (same IP block as the RP2040).  Both can
@@ -58,13 +58,12 @@ push N words with bit 8 = 1 each; bit 9 = 1 on the last command issues
 the STOP.  RESTART (bit 10) is set on the first command of a new
 direction within the same transaction.
 
-## Initialisation sequence (gotcha: ENABLE-must-be-0)
+## Initialization sequence (gotcha: ENABLE-must-be-0)
 
-Per the DW databook §3.2.1, **most config registers (IC_CON, SCL counts,
+Per the DW databook §3.2.1, most config registers (IC_CON, SCL counts,
 IC_SAR, IC_FS_SPKLEN, IC_SDA_HOLD, IC_RX_TL, IC_TX_TL, IC_DMA_CR) are
-read-only while IC_ENABLE = 1.**  A second-pass write to IC_CON without
-first dropping IC_ENABLE is silently ignored, which is a classic
-day-one-of-driver-bring-up bug.
+read-only while IC_ENABLE = 1. A second-pass write to IC_CON without
+first dropping IC_ENABLE is silently ignored.
 
 The driver enforces:
 
@@ -189,14 +188,3 @@ Bus speed dominates any non-trivial transfer: a 1-byte write at
 See the `i2c_*` symbols at the top of `src/i2c.S` for the full
 declaration block; AAPCS calling convention throughout.
 
-## Test coverage
-
-- T1 (Unicorn host harness): `tests/unicorn/test_i2c.py` - 24 tests
-  covering init, baudrate at 100k/400k/1M, write/read with and without
-  STOP, IRQ mask programming, IC_CLR_INTR semantics, DMA enable bits,
-  slave-mode entry, GPIO pin programming, and an end-to-end run through
-  each of the three example ELFs.
-- T3 (Renode integration): `tests/renode/i2c.resc` loads
-  `build/i2c_eeprom_demo.elf`, runs 500 ms simulated, asserts that the
-  UART captured the EEPROM write banner and the four-byte read-back
-  pattern (`a5 b6 c7 d8`) from the I2C peripheral stub at addr 0x50.

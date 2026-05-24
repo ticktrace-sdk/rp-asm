@@ -1,4 +1,4 @@
-# M2 - clocks / reset / power
+# clocks / reset / power
 
 This document covers the RP2350 clock-tree configuration installed by
 `src/main.S` (the production firmware) and `examples/clocks_demo.S` (a

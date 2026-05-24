@@ -1,4 +1,4 @@
-# PWM (M3-D)
+# PWM 
 
 Pulse-width modulation peripheral.  RP2350 has **12 slices**, each with two
 output channels (A and B), giving 24 PWM-capable outputs.  Datasheet

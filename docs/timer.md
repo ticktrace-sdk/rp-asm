@@ -1,4 +1,4 @@
-# M3-B - TIMER0 / TIMER1 / SysTick
+# TIMER0 / TIMER1 / SysTick
 
 This document covers the RP2350 wall-clock timers and the Cortex-M33
 SysTick reload counter, as implemented by `src/timer.S`, `src/systick.S`,
@@ -167,7 +167,7 @@ See `examples/timer_alarm_demo.S`.  The full IRQ plumbing is:
 
 * Datasheet rev 0.3 (Aug 2024) sec 12.8 documents the TIMER block;
   RESETS bit positions for timer0/timer1 are 23/24 per sec 7.5.
-* The "compare on low 32 bits only" behaviour is mentioned in passing in
+* The "compare on low 32 bits only" behavior is mentioned in passing in
   sec 12.8.3.  The `ALARMx` text is not explicit that the comparator is
   32-bit-only - we infer it from the register width and the fact there's
   no separate ALARMxH register.

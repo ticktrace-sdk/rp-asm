@@ -35,29 +35,6 @@ if present and falls back to system `python3`.
 
 The T3 install path lives in [tests/renode/README.md](renode/README.md).
 
-## Layout
-
-```
-tests/
-├── README.md                  ← you are here
-├── unicorn/                   T1
-│   ├── harness.py             RP2350Sim class - load ELF, hook MMIO
-│   ├── fixtures/smoke.S       smallest-possible exerciser
-│   ├── test_smoke.py          confidence test for the harness itself
-│   └── test_v01_blinky.py     trace assertion against build/blinky.elf
-├── qemu/                      T2
-│   ├── qemu.ld                mps2-an505 SSRAM1 layout (0x10000000)
-│   ├── sanity.S               semihosting "ok\n" + clean exit
-│   ├── run.sh                 assembles, links, runs one .S under QEMU
-│   ├── test_isa.py            pytest wrapper - discovers cases/*.S
-│   └── cases/                 add an .S here to grow the ISA suite
-└── renode/                    T3
-    ├── README.md              install + adding tests
-    ├── rp2350.repl            platform description (CPU, mem, peripherals)
-    ├── blinky.resc            loads + runs build/blinky.elf
-    └── run.sh                 runner - skips cleanly if Renode missing
-```
-
 ## How each tier works
 
 ### T1 - Unicorn host harness
@@ -74,7 +51,7 @@ assert sim.writes[0].addr == RESETS_RESET_CLR
 assert bytes(tx).startswith(b"ticktrace v0.1")
 ```
 
-What it gives you:
+
 
 - Every MMIO transaction (read OR write) is recorded as an `MmioEvent`
   with `pc`, `addr`, `size`, `value`. Tests assert directly on the
@@ -120,7 +97,7 @@ QEMU's M33 model breaks across versions, T2 catches it.
 
 ### T3 - Renode integration
 
-A real Cortex-M33 emulator with a real PL011 model. We synthesise a
+A real Cortex-M33 emulator with a real PL011 model. We synthesize a
 minimal RP2350 platform in `tests/renode/rp2350.repl`:
 
 - 512 KiB SRAM at `0x20000000`
@@ -147,9 +124,6 @@ make build/diag_flash.uf2              # stage-blinker for bisecting boot hangs
 make build/usb_cdc_echo_demo_flash.uf2 # CDC echo on /dev/ttyACM0
 ```
 
-Hold BOOTSEL while plugging the Pico 2 in, drag the `.uf2` to the
-mounted drive, observe.  Wiring this into CI needs a USB-attached host
-plus a UART loopback; the v0.2 milestone is the right time.
 
 ## Adding a new test
 

@@ -1,9 +1,7 @@
-# Boot - bootrom -> `_reset` -> `main`
+# Boot sequence
 
 This document covers the early-boot path in `src/startup.S` and the
-two linker layouts in `link/`.  If you're chasing a new bring-up
-failure, the [Debugging boot hangs](#debugging-boot-hangs) section at
-the bottom is the entry point.
+two linker layouts in `link/`.  
 
 Datasheet references: RP2350 datasheet rev 0.3 (Aug 2024) sec 5 (Boot),
 sec 3.2 (Interrupts), sec 7.5 (RESETS).  ARMv8-M Architecture Reference
@@ -24,23 +22,6 @@ automatically from the load address.
 The default `make build/<name>.uf2` produces an **SRAM** image.  For
 firmware that survives a power cycle, build `make build/<name>_flash.uf2`.
 
-### A note on UF2 family IDs (and a previous bug)
-
-Older versions of `tools/uf2.py` hard-coded family ID `0xE48BFF59`
-(RP2350_ARM_S) for both SRAM and flash images.  That mismatch caused
-SRAM-resident UF2s to be silently rejected by the bootrom on real
-hardware: the BOOTSEL drive would eject normally, but the core never
-actually entered the loaded image, leaving the board apparently dead.
-The pico-sdk's `src/rp2_common/pico_crt0/rp2350/memmap_no_flash.ld`
-demonstrates the working pattern, and picotool's `elf2uf2` selects
-the family by inspecting the ELF segment addresses (RAM range vs flash
-range).  ticktrace now does the same; see `family_for()` in
-`tools/uf2.py`.
-
-If you're hunting a "drive ejects, board does nothing" symptom, the
-first thing to check is the UF2 header's `family_id` field at offset
-`+0x1c` of the first 512-byte block.  It must match the load address.
-
 ## Post-bootrom state
 
 The bootrom hands off with most peripherals in some default state
@@ -51,8 +32,8 @@ that the SDK has to clean up.  In particular:
 - **MSPLIM** may be set high enough to fault on the first `push`.
 - **CPACR** has the RCP coprocessor (CP7) possibly enabled, possibly
   not; instructions targeting CP7 fault if it's disabled.
-- **RCP canary seeds** may or may not have been initialised; double-
-  initialising them is itself a fault.
+- **RCP canary seeds** may or may not have been initialized; double-
+  initializing them is itself a fault.
 - **`clk_peri` is off**, so peripherals with their own clock domain
   (UART, I2C, SPI, ...) cannot assert `RESET_DONE` until later.
 - **`io_bank0` and `pads_bank0` are already out of reset** -- we
@@ -75,30 +56,6 @@ _reset:
     9. b main
 ```
 
-Each step exists because removing it breaks something on real silicon:
-
-- **CPACR / RCP seeding** mirrors pico-sdk's crt0.S `_entry_point` for
-  NO_FLASH builds.  If RCP is left in an inconsistent state the next
-  RCP-protected access faults.  Idempotent on every path.
-- **MSPLIM = 0** because the bootrom may have left it high enough
-  that the *first* `push {r4, r5, lr}` in any AAPCS function (e.g.
-  `pll_init` or `blink_n`) trips STKOF -> HardFault -> `_halt`.
-- **Vector relocation to SRAM** because for flash-resident images the
-  vector table lives at XIP 0x10000000 (read-only); `nvic_install_handler`
-  patches a vector entry by writing to `VTOR + (16+irq)*4`, which is a
-  silent no-op against flash.  Copying the table to SRAM and pointing
-  VTOR at the copy makes dynamic IRQ wiring work on both build paths.
-- **RESETS mask is io_bank0 + pads_bank0 only.**  The original mask
-  also included `uart0` (bit 26), but UART0 needs `clk_peri` running
-  before its `RESET_DONE` bit asserts -- and `clk_peri` is off until
-  `clocks_init` runs.  The spin loop hung forever waiting for that
-  bit.  `uart0_init` releases UART0 itself, after `clocks_init`, by
-  the same RESETS-CLR + spin pattern.  Any other peripheral with its
-  own clock (I2C, SPI, USB, ...) follows the same rule: release in
-  its own `_init`, not in `_reset`.
-
-The exact sequence is bisectable via `examples/diag_*.S` if you need
-to investigate a future failure -- see below.
 
 ## Vector table
 

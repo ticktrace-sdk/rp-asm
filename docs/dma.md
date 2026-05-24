@@ -1,4 +1,4 @@
-# M3-C - DMA controller
+# DMA controller
 
 This document covers the RP2350 DMA controller driver in `src/dma.S` and
 the three end-to-end demos in `examples/dma_*.S`.

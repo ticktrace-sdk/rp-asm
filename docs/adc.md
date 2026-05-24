@@ -1,4 +1,4 @@
-# ADC (M5-J)
+# ADC 
 
 RP2350 has an 8-channel, 12-bit SAR ADC (RP2040 had 4 channels). Sample
 rate up to 500 kS/s.

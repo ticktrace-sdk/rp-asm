@@ -1,12 +1,9 @@
-# Scheduler: NVIC-priority kernel (QV-style)
-
+# Scheduler: NVIC-priority kernel 
 A 200-LOC asm scheduler that uses the Cortex-M33 NVIC as its dispatch
-engine. Inspired by Quantum Leaps' QV (Vanilla) kernel; the
-architecture is the same; this is a from-scratch asm implementation.
+engine. 
 
 Driver: `src/sched.S`. Defs: `include/sched.inc`.
 
-## The idea in one sentence
 
 **Every task is an NVIC interrupt handler.** Posting a task is one
 `STR` to NVIC_ISPR; the hardware tail-chains into the highest-priority
@@ -210,9 +207,13 @@ in `include/sched.inc`.
 ## Open work
 
 - Statistics: cycles spent per task, average post-to-entry latency.
-  `benchmarks/rp_asm/bench_sched_post.S` already measures the latter
-  on real hardware; per-task accounting would need a thin wrapper that
-  reads DWT.CYCCNT in a task prologue/epilogue.
+  Per-task accounting would need a thin wrapper that reads DWT.CYCCNT
+  in a task prologue/epilogue.
 - Multi-bank `task_post_n` (today it's one STR only because all 8
   slots fit in NVIC bank 1; if you raise `MAX_TASKS` past what one
   bank holds, the API needs to fan out to multiple STRs).
+
+## Insprired by
+
+- Rust RTIC- Real Time Interrupt driven Concurrency
+

@@ -1,4 +1,4 @@
-# TRNG (M5-J)
+# TRNG 
 
 True random number generator, new on RP2350 (RP2040 had none). Built on an
 ARM CryptoCell-312 RNG block: a ring-oscillator entropy source feeds a
@@ -52,10 +52,3 @@ acceptance criteria.
 
 - `build/trng_demo.uf2`: prints 8 random 32-bit words over UART.
 
-## T1 tests
-
-`tests/unicorn/test_adc_trng.py::test_trng_*` (2 cases):
-
-- `trng_init` clears RESETS bit 25 and writes `1` to `RND_SOURCE_ENABLE`.
-- `trng_get_random_word` polls `TRNG_VALID`, reads `EHR_DATA0`, and writes
-  `1` to `RNG_ICR` to release the EHR for refill.

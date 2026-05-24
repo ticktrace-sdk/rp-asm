@@ -1,6 +1,6 @@
 # Studio
 
-A sibling product to the ticktrace SDK that lets users pick a target, toggle
+A complementary product to the ticktrace SDK that lets users pick a target, toggle
 peripherals, build, and flash without touching `make` or `picotool`. Studio
 lives in `studio/` as its own Go module and consumes the parent SDK by relative
 paths: modules in the catalog point at `../src/foo.S`, linker scripts at
@@ -140,7 +140,9 @@ Non-bootloader projects produce just `<name>.{elf,bin,map,uf2}`.
 
 ## Flash pipeline
 
-### rpasmboot (PICOBOOT v2)
+### rpasmboot 
+
+This is our take on the RP2040 PICOBOOT protocol, adapted for ticktrace.
 
 The in-tree client (`studio/internal/rpasmboot`) speaks the RP2350 PICOBOOT
 wire protocol directly over `usbfs` on Linux. No external `picotool` or

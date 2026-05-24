@@ -96,13 +96,7 @@ LOAD_ADDR := 0x20000000
 EXAMPLE_SRC := $(wildcard examples/*.S)
 EXAMPLE_UF2 := $(patsubst examples/%.S, build/%.uf2, $(EXAMPLE_SRC))
 
-# Benchmarks: every benchmarks/rp_asm/bench_*.S becomes build/<name>.uf2.
-# bench_lib.S is a shared helper, NOT itself a bench.
-BENCH_SRC := $(filter-out benchmarks/rp_asm/bench_lib.S, $(wildcard benchmarks/rp_asm/bench_*.S))
-BENCH_UF2 := $(patsubst benchmarks/rp_asm/%.S, build/%.uf2, $(BENCH_SRC))
-BENCH_ELF := $(patsubst benchmarks/rp_asm/%.S, build/%.elf, $(BENCH_SRC))
-
-.PHONY: all examples bench bench-sizes dump clean test test-t1 test-t2 test-t3 test-tools test-all pydeps tools
+.PHONY: all examples dump clean test test-t1 test-t2 test-t3 test-tools test-all pydeps tools
 .PRECIOUS: build/%.elf build/%.bin build/%_flash.elf build/%_flash.bin \
            build/%_signed_flash.bin build/%_encrypted_flash.elf
 all: $(TARGET).uf2
@@ -127,8 +121,6 @@ tools: $(RPASM)
 # any divergence is caught before we flip the Makefile rules over.
 
 examples: $(EXAMPLE_UF2)
-
-bench: $(BENCH_UF2)
 
 # ============================================================================
 # C bridge (opt-in): builds C apps that link against the asm core.
@@ -496,31 +488,6 @@ build/%_encrypted_flash.uf2: build/%_encrypted_flash.elf
 .PHONY: keys
 keys: $(PRIVATE_PEM) $(AES_KEY) $(IV_SALT)
 
-
-# -------------------------------------------------------------- benchmarks
-# Like examples, but: (a) link in benchmarks/rp_asm/bench_lib.S, (b) bench
-# files supply their own `main` (except bench_minimum which has its own
-# _reset_bench and skips main.S entirely - handled by it not exporting main).
-build/bench_lib.o: benchmarks/rp_asm/bench_lib.S
-	@mkdir -p $(@D)
-	@$(ASM) $(ASFLAGS) -o $@ $<
-	@echo "  AS      $<"
-
-build/%.elf: benchmarks/rp_asm/%.S $(DRIVER_OBJ) build/bench_lib.o link/sram.ld
-	@mkdir -p $(@D)
-	@$(ASM) $(ASFLAGS) -o build/$*.bench.o $<
-	@$(LD) $(LDFLAGS) -Map=build/$*.map -o $@ $(DRIVER_OBJ) build/bench_lib.o build/$*.bench.o
-	@$(SIZE) $@
-
-# bench-sizes: just emit the .text+.rodata size table without running anything
-bench-sizes: $(BENCH_ELF)
-	@echo ""
-	@echo "==== ticktrace benchmark image sizes ===="
-	@printf "  %-32s  %8s  %8s\n" "image" "text" "total"
-	@for elf in $(BENCH_ELF); do \
-	    sz=$$($(SIZE) -d "$$elf" | awk 'NR==2 {printf "  %8d  %8d", $$1, $$1+$$2}'); \
-	    printf "  %-32s%s\n" "$$(basename $$elf)" "$$sz"; \
-	done
 
 # -------------------------------------------------------------- objects
 build/%.o: src/%.S include/rp2350.inc include/clocks.inc

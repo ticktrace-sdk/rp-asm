@@ -181,7 +181,6 @@ Start with `docs/apps.md`. It walks through writing your first app from scratch.
 | `docs/spsc.md` | Lock-free ISR → task byte queue |
 | `docs/c_bridge.md` | C apps with assembly drivers |
 | `docs/rust_bridge.md` | `no_std` Rust apps with assembly drivers |
-| `docs/benchmarking.md` | Benchmark suite vs pico-sdk |
 
 ## Design notes
 

@@ -1,4 +1,4 @@
-# PIO (M5-I)
+# PIO
 
 RP2350 has **3 PIO blocks** (PIO0/PIO1/PIO2), up from 2 on RP2040. Each is
 4 state machines × 32 instructions of program memory + per-SM 4-deep TX/RX
@@ -10,7 +10,7 @@ Driver: `src/pio.S`. Defs: `include/pio.inc`. Bases: `0x50200000` /
 `0x50300000` / `0x50400000`. RESETS bits: `11`, `12`, `13`.
 
 > **Status:** PIO controller driver + a hand-encoded blink example +
-> 10 T1 unit tests are shipped. The Python `pioasm` tool is deferred:
+> 10 T1 unit tests are shipped. The Python `pioasm` tool integration is deferred:
 > users currently encode programs by hand (it's only 16 bits per
 > instruction; see "Hand encoding" below).
 
@@ -34,7 +34,7 @@ pio_gpio_init(idx, pin)                         gpio_set_function(pin, 6+idx)
 
 ## Hand encoding the PIO program
 
-Until `pioasm` lands, programs are written as `.word` arrays of pre-encoded
+PIO programs are written as `.word` arrays of pre-encoded
 16-bit instructions. The 16-bit format:
 
 ```
@@ -161,29 +161,7 @@ Each SM exposes two DREQs: `PIOn_TXm` and `PIOn_RXm` (n ∈ {0,1,2}, m ∈
 - DMA streams data to the SM; the SM pulls from the TX FIFO whenever
   `OUT` or `PULL` executes.
 
-## Build artefacts
 
-- `build/pio_blink_demo.uf2`: PIO0 SM0 drives GP25 at ~36 Hz square
-  wave. LED appears solid-dim to the eye; verify with a logic analyser.
+## TODO (deferred)
 
-## T1 tests
-
-`tests/unicorn/test_pio.py` (10 cases). The fixture maps the
-`0x50200000..0x50404000` window plus its atomic aliases via a `_map_pio`
-helper (PIO sits outside the harness's APB pre-mapping at `0x40000000`).
-
-- `pio_init` RESETS bit math for all 3 blocks (11/12/13).
-- `pio_add_program` copy semantics + non-zero `origin`.
-- `pio_sm_set_clkdiv` field packing.
-- `pio_sm_set_enabled` picks SET vs CLR alias correctly.
-- `pio_sm_put` spins on TX_FULL, then stores once.
-- `pio_sm_exec` writes the instruction word to `SM_INSTR`.
-- `pio_sm_set_set_pins` / `pio_sm_set_wrap` RMW preserves unrelated
-  bitfields.
-- `pio_gpio_init` dispatches `gpio_set_function(pin, 6+pio_idx)`.
-
-## Coming later (deferred)
-
-- `tools/pioasm.py`: Python assembler producing `.S`-emittable program blobs.
-- DMA-fed `ws2812.pio` example with a side-set program.
 - IRQ-based RX FIFO drain via `pio_sm_set_irq_handler`.

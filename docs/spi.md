@@ -1,4 +1,4 @@
-# M4-G - SPI (PL022) controllers
+# SPI (PL022) controllers
 
 This document covers the RP2350 SPI driver in `src/spi.S` and the three
 end-to-end demos in `examples/spi_*.S`.
@@ -193,7 +193,7 @@ The loopback demos run at the bootrom-default 12 MHz `clk_peri` to keep
 the UF2s small; real silicon at 150 MHz `clk_peri` would clock 12.5x
 faster but the register write trace is identical.
 
-## Caveats / what the M4-G model does NOT do
+## TODO (deffered)
 
 - **No PLL bring-up in the demos.**  At 12 MHz `clk_peri`, the achieved
   baud at "1 MHz" is 12 MHz / (2 * 75) = 80 kHz.  This is fine for
@@ -205,23 +205,4 @@ faster but the register write trace is identical.
   rising FSS edge as end-of-frame and re-arms.  The master/slave demo
   sidesteps this by pre-loading the slave TX FIFO before the master
   starts clocking.
-- **The Renode model** in `tests/renode/rp2350.repl` (the SPI block)
-  short-circuits TX-into-RX FIFO on every store regardless of LBM,
-  because it has no other counterpart to talk to.  T1 still asserts on
-  the LBM-conditional behaviour via the Unicorn mocks.
 
-## Datasheet vs implementation cross-check
-
-All field positions verified against RP2350 rev 0.3 (Aug 2024) section
-12.3 + ARM SSP TRM (DDI 0194H).  Notable points:
-
-- The dma.inc TREQ table assigns SPI0_TX = 24 / SPI0_RX = 25 / SPI1_TX
-  = 26 / SPI1_RX = 27 - we re-export these in `include/spi.inc` so SPI
-  consumers can include only `spi.inc`.  The original M4 brief listed
-  16/17/18/19 (= PIO2_TX 0..3 in the actual table); the dma.inc values
-  are correct.
-- NVIC IRQ lines on RP2350: `SPI0_IRQ = 31`, `SPI1_IRQ = 32`.  The
-  RP2040 had SPI0 = 18 / SPI1 = 19; the table was renumbered in the
-  RP2350 rev.
-- RESETS bit positions: SPI0 = bit 18, SPI1 = bit 19 (matches
-  pico-sdk `hardware/regs/resets.h`).

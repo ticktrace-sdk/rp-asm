@@ -1,10 +1,8 @@
-# M3-A: GPIO / PADS
+# GPIO / PADS
 
 Full RP2350 GPIO subsystem coverage: 48 user GPIOs in IO_BANK0 + 6 QSPI
 pins in IO_QSPI, all atomic-aliased and per-pad configurable. This is the
-"complete" GPIO driver; it supersedes the v0.1 single-pin LED helpers,
-which remain as thin back-compat shims (`gpio_led_init`,
-`gpio_led_toggle`).
+"complete" GPIO driver.
 
 ## Files
 
@@ -206,13 +204,3 @@ takes the full byte of the shift register, so `1 << 33` would be 0
 silicon-correct; the explicit subtract is what makes pin 33 land at
 bit 1 in the HI register, as the datasheet specifies.
 
-## Testing
-
-T1 (Unicorn) tests in `tests/unicorn/test_gpio.py` lock the exact MMIO
-write trace for every public function. T3 (Renode) loads
-`build/gpio_demo.elf`, runs 100 ms of simulated time, and asserts at
-least 8 SIO_GPIO_OUT_* events on the watched pins.
-
-The v0.1 regression test (`tests/unicorn/test_v01_blinky.py`,
-unchanged from M2) continues to pass; `gpio_led_init` and
-`gpio_led_toggle` emit byte-identical write traces.

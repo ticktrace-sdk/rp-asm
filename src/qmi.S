@@ -75,9 +75,9 @@ qmi_set_clkdiv:
     bx      lr
 
 @ ----------------------------------------------------------------------------
-@ qmi_flush_cache - blocking cache invalidate.  Useful for cold-cache
-@ benchmarks.  Safe to run from XIP itself (XIP_CTRL writes don't change
-@ the QMI timing in flight).
+@ qmi_flush_cache - blocking cache invalidate.  Useful when you need a
+@ predictable cold-cache start.  Safe to run from XIP itself (XIP_CTRL
+@ writes don't change the QMI timing in flight).
 @ ----------------------------------------------------------------------------
     .section .text.qmi_flush_cache, "ax"
     .thumb_func

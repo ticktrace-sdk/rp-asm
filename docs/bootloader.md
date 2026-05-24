@@ -5,7 +5,7 @@ A layered, customer-flavorable boot chain for the RP2350. The stack:
 ```
 Stage 0 (FSBL)  mask-ROM bootrom          Raspberry Pi; immutable.
                                           Reads IMAGE_DEF, sets SP/PC.
-                                          We don't write this.
+                                          We don't do anything with this.
 
 Stage 1 (SSBL)  ticktrace Second-Stage BL    src/ssbl/ssbl.S, < 4 KiB.
                                           At 0x10000000. Validates TSBL

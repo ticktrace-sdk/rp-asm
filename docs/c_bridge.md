@@ -6,7 +6,7 @@ drivers stay in asm. AAPCS makes the call boundary free.
 > **Branch note:** lives on `claude/c-rust-bridge`. The asm-only mainline
 > never references C code; the bridge is strictly additive.
 
-## What ships
+## What is included
 
 | File | Purpose |
 | ---- | ------- |
@@ -133,16 +133,6 @@ int main(void) {
 The `noreturn` attribute on `sched_run` in the header lets gcc drop the
 return-to-main path entirely.
 
-## T1 tests
-
-`tests/unicorn/test_c_bridge.py` (8 cases):
-
-- `memset` zeroes, replicates the byte across the buffer, handles
-  unaligned counts.
-- `memcpy` word-aligned path; byte fallback for unaligned count.
-- `memcmp` returns 0 when equal; the signed difference at the first
-  mismatch otherwise.
-- `_c_runtime_init` zeroes the `__bss_start__..__bss_end__` range.
 
 ## Limitations
 
@@ -163,6 +153,6 @@ Use C for: protocol handlers, parsers, application state machines, code
 that humans will read more than once.
 
 Use asm for: drivers, ISR top-halves, anything where you'd be unhappy if
-the optimiser changed its mind.
+the optimizer changed its mind.
 
 See `docs/calling.md` for the full ABI contract that both languages obey.
