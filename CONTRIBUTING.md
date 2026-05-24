@@ -11,7 +11,7 @@ ticktrace is dual-licensed (AGPL-3.0-or-later + commercial). For Amken LLC to be
 
 1. **DCO sign-off on every commit.** Add `Signed-off-by: Your Name <your@email>` as the last line of every commit message. `git commit -s` adds this automatically. This is the [Developer Certificate of Origin](https://developercertificate.org/) and certifies you wrote the code (or have permission to contribute it).
 
-2. **CLA for non-trivial contributions.** If your PR is more than a typo fix or a docstring edit (roughly: anything that adds or changes code in `src/`, `examples/`, `tools/`, or `tests/`), we'll ask you to sign a one-page Contributor License Agreement before merging. The CLA grants Amken LLC the right to also distribute your contribution under the commercial license. It does **not** transfer your copyright — you retain that. We'll send a link to a digital-signature flow when the PR is ready to merge.
+2. **CLA for non-trivial contributions.** If your PR is more than a typo fix or a docstring edit (roughly: anything that adds or changes code in `src/`, `examples/`, `tools/`, or `tests/`), we'll ask you to sign a one-page Contributor License Agreement before merging. The CLA grants Amken LLC the right to also distribute your contribution under the commercial license. It does **not** transfer your copyright — you retain that. Read it at <https://www.ticktrace.io/cla/>; signing is by an affirmative statement on the PR thread (instructions at the bottom of the CLA).
 
 Trivial fixes (typos, broken links, comment clarifications) only need the DCO sign-off, not the CLA.
 
