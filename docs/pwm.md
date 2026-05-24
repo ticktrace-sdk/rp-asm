@@ -187,18 +187,3 @@ slot `16 + 8 = 24`, point `VTOR` at the new table, and program
 `NVIC_ISER0 |= (1 << 8)` to unmask the line.  The driver helpers
 `pwm_irq_enable(slice, on)` and `pwm_acknowledge_irq(slice)` handle the
 INTE / INTR plumbing.
-
-## Tests
-
-- **T1 (Unicorn).**  `tests/unicorn/test_pwm.py` injects calls into each
-  public driver function and asserts on the resulting MMIO trace -- exact
-  addresses, exact values, even access widths (STRH vs STR).  Also runs
-  the fade demo end-to-end and checks slice 7 was enabled with the right
-  DIV/TOP after clock bring-up.
-
-- **T3 (Renode).**  `tests/renode/pwm.resc` loads `pwm_fade_demo.elf`,
-  runs 1 s simulated, and asserts the peripheral logged
-  `PWM slice 7 enabled` plus >=10 `PWM_CC_WRITE` events (proving the
-  fade is animating).  The peripheral python is at
-  `tests/renode/pwm_peripheral.py` (canonical) and inlined inside
-  `tests/renode/rp2350.repl`'s PWM trailer block.

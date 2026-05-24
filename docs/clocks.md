@@ -6,37 +6,7 @@ standalone fixture).
 
 ## Final tree
 
-```
-                     12 MHz crystal (off-chip)
-                            |
-                          XOSC ----------+
-                            |            |
-                            v            v
-                       clk_ref=12      reference for both PLLs
-                            |
-                            |    PLL_SYS  (REFDIV=1, FBDIV=125,
-                            +--->          POSTDIV1=5, POSTDIV2=2)
-                            |              VCO=1500 MHz, out=150 MHz
-                            |                  |
-                            |                  v
-                            |           clk_sys = 150 MHz
-                            |             |       |
-                            |             |       +--> M33 cores, AHB, APB
-                            |             v
-                            |       clk_peri = 150 MHz --> UART/SPI/I2C
-                            |
-                            |    PLL_USB  (REFDIV=1, FBDIV=100,
-                            +--->          POSTDIV1=5, POSTDIV2=5)
-                                            VCO=1200 MHz, out=48 MHz
-                                                  |
-                                       +----------+----------+
-                                       v                     v
-                                clk_usb = 48 MHz      clk_adc = 48 MHz
-
-   TICKS PERIPHERAL:  clk_ref=12 / 12 = 1 MHz tick
-                       --> TIMER0, TIMER1, WATCHDOG (1 us resolution)
-```
-
+![clock-tree.svg](images/clock-tree.svg)
 ## PLL math
 
 For both PLLs:

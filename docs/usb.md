@@ -84,31 +84,7 @@ To ship 5 bytes on EP0 IN with PID DATA1:
 
 ## SETUP-handler state machine
 
-```
-                    +------------+
-   USB BUS_RESET -> | reset      |
-                    | state      |
-                    | ADDR=0     |
-                    +-----+------+
-                          |
-                          v
-                    +------------+
-   SETUP_REQ ----->  | parse 8-B |
-                    | SETUP at  |
-                    | DPRAM[0]  |
-                    +-----+------+
-                          |
-        +-----------------+-----------------+
-        |        |        |        |       |
-        v        v        v        v       v
-   GET_DESCR  SET_ADDR  SET_CFG  CDC_REQ  STALL
-        |        |        |        |       |
-   table     pending   ep_ctrl   ZLP     EP_STALL
-   lookup    write     setup    or 7-B   _ARM bit
-   then EP0  (apply    + EP1    canned   + buf_ctrl
-   IN copy   in next   OUT      reply    .STALL = 1
-            BUFF_STAT) arm
-```
+![USB SETUP state machine: BUS_RESET enters the reset state (ADDR=0); SETUP_REQ transitions into the 8-byte SETUP parser, which fans out into five branches — GET_DESCR (table lookup + EP0 IN copy), SET_ADDR (pending write applied on next BUFF_STAT), SET_CFG (ep_ctrl setup + EP1 OUT arm), CDC_REQ (ZLP or 7-byte canned reply), or STALL (EP_STALL_ARM + buf_ctrl.STALL=1)](images/usb-setup-state.svg)
 
 Key invariants:
 

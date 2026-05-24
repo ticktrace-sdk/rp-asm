@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 520" font-family="ui-monospace, Menlo, Monaco, monospace" font-size="13">
+  <style>
+    text { fill: #1f2937; }
+    .title    { font-size: 16px; font-weight: bold; }
+    .small    { font-size: 11px; fill: #6b7280; }
+    .mono     { font-size: 11px; }
+    .label    { font-weight: bold; }
+    .state    { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.5; }
+    .branch   { fill: #fef3c7; stroke: #b45309; stroke-width: 1.5; }
+    .action   { fill: #ede9fe; stroke: #7c3aed; stroke-width: 1.5; }
+    .err      { fill: #fee2e2; stroke: #dc2626; stroke-width: 1.5; }
+    .wire     { fill: none; stroke: #374151; stroke-width: 2; }
+    .wirelbl  { font-size: 11px; fill: #374151; font-style: italic; }
+
+    @media (prefers-color-scheme: dark) {
+      text { fill: #e5e7eb; }
+      .small { fill: #9ca3af; }
+      .wirelbl { fill: #d1d5db; }
+      .wire { stroke: #d1d5db; }
+      .state { fill: #1e3a8a; stroke: #93c5fd; }
+      .branch { fill: #78350f; stroke: #fbbf24; }
+      .action { fill: #4c1d95; stroke: #c4b5fd; }
+      .err { fill: #7f1d1d; stroke: #f87171; }
+    }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M 0 0 L 9 4.5 L 0 9 Z" fill="#374151"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">USB SETUP-handler state machine</text>
+  <text x="20" y="46" class="small">Every USB transaction starts as one of these five SETUP requests; the controller routes to the matching action.</text>
+
+  <!-- BUS_RESET edge label -->
+  <text x="40" y="100" class="wirelbl">BUS_RESET</text>
+  <line class="wire" x1="115" y1="105" x2="280" y2="105" marker-end="url(#arrowhead)"/>
+
+  <!-- State 1: reset -->
+  <g transform="translate(280,80)">
+    <rect class="state" x="0" y="0" width="160" height="60" rx="6"/>
+    <text x="80" y="22" text-anchor="middle" class="label">reset state</text>
+    <text x="80" y="40" text-anchor="middle" class="small">ADDR = 0</text>
+    <text x="80" y="55" text-anchor="middle" class="small">EPs disabled</text>
+  </g>
+
+  <!-- Wire down to parse -->
+  <line class="wire" x1="360" y1="140" x2="360" y2="170" marker-end="url(#arrowhead)"/>
+
+  <!-- SETUP_REQ edge label -->
+  <text x="375" y="160" class="wirelbl">SETUP_REQ</text>
+
+  <!-- State 2: parse 8-byte SETUP -->
+  <g transform="translate(280,170)">
+    <rect class="state" x="0" y="0" width="160" height="60" rx="6"/>
+    <text x="80" y="22" text-anchor="middle" class="label">parse 8B SETUP</text>
+    <text x="80" y="40" text-anchor="middle" class="small">at DPRAM[0]</text>
+    <text x="80" y="55" text-anchor="middle" class="small">decode bRequest</text>
+  </g>
+
+  <!-- Branches: 5 routes fanning out below parse -->
+  <!-- Trunk down + horizontal fan-out -->
+  <line class="wire" x1="360" y1="230" x2="360" y2="260"/>
+  <line class="wire" x1="100" y1="260" x2="700" y2="260"/>
+  <line class="wire" x1="100" y1="260" x2="100" y2="290" marker-end="url(#arrowhead)"/>
+  <line class="wire" x1="250" y1="260" x2="250" y2="290" marker-end="url(#arrowhead)"/>
+  <line class="wire" x1="400" y1="260" x2="400" y2="290" marker-end="url(#arrowhead)"/>
+  <line class="wire" x1="550" y1="260" x2="550" y2="290" marker-end="url(#arrowhead)"/>
+  <line class="wire" x1="700" y1="260" x2="700" y2="290" marker-end="url(#arrowhead)"/>
+
+  <!-- 5 branch boxes -->
+  <g transform="translate(40,290)">
+    <rect class="branch" x="0" y="0" width="120" height="60" rx="6"/>
+    <text x="60" y="22" text-anchor="middle" class="label">GET_DESCR</text>
+    <text x="60" y="42" text-anchor="middle" class="small">table lookup,</text>
+    <text x="60" y="55" text-anchor="middle" class="small">EP0 IN copy</text>
+  </g>
+  <g transform="translate(190,290)">
+    <rect class="branch" x="0" y="0" width="120" height="60" rx="6"/>
+    <text x="60" y="22" text-anchor="middle" class="label">SET_ADDR</text>
+    <text x="60" y="42" text-anchor="middle" class="small">pending write,</text>
+    <text x="60" y="55" text-anchor="middle" class="small">apply on BUFF_STAT</text>
+  </g>
+  <g transform="translate(340,290)">
+    <rect class="branch" x="0" y="0" width="120" height="60" rx="6"/>
+    <text x="60" y="22" text-anchor="middle" class="label">SET_CFG</text>
+    <text x="60" y="42" text-anchor="middle" class="small">ep_ctrl setup,</text>
+    <text x="60" y="55" text-anchor="middle" class="small">EP1 OUT arm</text>
+  </g>
+  <g transform="translate(490,290)">
+    <rect class="branch" x="0" y="0" width="120" height="60" rx="6"/>
+    <text x="60" y="22" text-anchor="middle" class="label">CDC_REQ</text>
+    <text x="60" y="42" text-anchor="middle" class="small">ZLP or 7B</text>
+    <text x="60" y="55" text-anchor="middle" class="small">canned reply</text>
+  </g>
+  <g transform="translate(640,290)">
+    <rect class="err" x="0" y="0" width="120" height="60" rx="6"/>
+    <text x="60" y="22" text-anchor="middle" class="label">STALL</text>
+    <text x="60" y="42" text-anchor="middle" class="small">EP_STALL_ARM +</text>
+    <text x="60" y="55" text-anchor="middle" class="small">buf_ctrl.STALL=1</text>
+  </g>
+
+  <!-- Tier 3: action descriptions -->
+  <line class="wire" x1="100" y1="350" x2="100" y2="380" marker-end="url(#arrowhead)"/>
+  <line class="wire" x1="250" y1="350" x2="250" y2="380" marker-end="url(#arrowhead)"/>
+  <line class="wire" x1="400" y1="350" x2="400" y2="380" marker-end="url(#arrowhead)"/>
+  <line class="wire" x1="550" y1="350" x2="550" y2="380" marker-end="url(#arrowhead)"/>
+  <line class="wire" x1="700" y1="350" x2="700" y2="380" marker-end="url(#arrowhead)"/>
+
+  <g transform="translate(40,380)">
+    <rect class="action" x="0" y="0" width="120" height="40" rx="6"/>
+    <text x="60" y="18" text-anchor="middle" class="small">device, config,</text>
+    <text x="60" y="32" text-anchor="middle" class="small">string descriptors</text>
+  </g>
+  <g transform="translate(190,380)">
+    <rect class="action" x="0" y="0" width="120" height="40" rx="6"/>
+    <text x="60" y="18" text-anchor="middle" class="small">ADDR latched</text>
+    <text x="60" y="32" text-anchor="middle" class="small">post status stage</text>
+  </g>
+  <g transform="translate(340,380)">
+    <rect class="action" x="0" y="0" width="120" height="40" rx="6"/>
+    <text x="60" y="18" text-anchor="middle" class="small">bulk pipes open</text>
+    <text x="60" y="32" text-anchor="middle" class="small">CDC enumerated</text>
+  </g>
+  <g transform="translate(490,380)">
+    <rect class="action" x="0" y="0" width="120" height="40" rx="6"/>
+    <text x="60" y="18" text-anchor="middle" class="small">SET_LINE_CODING,</text>
+    <text x="60" y="32" text-anchor="middle" class="small">SET_CONTROL_LINE_STATE</text>
+  </g>
+  <g transform="translate(640,380)">
+    <rect class="action" x="0" y="0" width="120" height="40" rx="6"/>
+    <text x="60" y="18" text-anchor="middle" class="small">host retries</text>
+    <text x="60" y="32" text-anchor="middle" class="small">or gives up</text>
+  </g>
+
+  <text x="20" y="500" class="small">Blue = stable state, yellow = SETUP request branch, purple = side-effect action, red = error path.</text>
+</svg>

@@ -9,33 +9,7 @@ Datasheet refs:
 
 ## Block at a glance
 
-```
-   +-----------------------------------------------------+
-   |  SPI0 @ 0x40080000  (PL022 PrimeCell)               |
-   |                                                     |
-   |  +----+   +----+    +-----------+    +-----------+  |
-   |  | TX |-->| TX |--> | TX shift  | -> MOSI / MISO  |
-   |  | DR | 8 | FIFO    | register  | <- (slave mode) |
-   |  +----+   +----+    +-----------+                  |
-   |                          ^                         |
-   |  +----+   +----+         |                         |
-   |  | RX |<--| RX |<--------+ RX shift register       |
-   |  | DR | 8 | FIFO                                   |
-   |  +----+   +----+                                   |
-   |                                                    |
-   |  +----+ +----+ +----+ +----+ +----+ +----+ +----+  |
-   |  |CR0 | |CR1 | |SR  | |CPSR| |IMSC| |ICR | |DMA |  |
-   |  |    | |LBM/| |TFE/| | even| ROR/| | ROR| |TX/ |  |
-   |  |DSS,| |SSE/| |TNF/| | divs| RT/ | | RT | | RX |  |
-   |  |FRF,| |MS/ | |RNE/| | 2.. | RX/ | |    | |    |  |
-   |  |SPO,| |SOD | |RFF/| |254 | TX  | |    | |    |  |
-   |  |SPH,| |    | |BSY |  |   |    | |    | |    |  |
-   |  |SCR | |    | |    | |    |    | |    | |    |  |
-   |  +----+ +----+ +----+ +----+ +----+ +----+ +----+  |
-   +-----------------------------------------------------+
-
-   SPI1 @ 0x40088000 - identical layout, +0x8000 stride.
-```
+![SPI PL022 block: TX_DR feeds an 8-entry TX FIFO into a TX shift register that drives MOSI/MISO; RX is the symmetric reverse path. Below: the control register bank (CR0, CR1, SR, CPSR, IMSC, ICR, DMACR). SPI1 is identical at +0x8000 stride.](images/spi-block.svg)
 
 ## Register map (relative to SPIn_BASE)
 

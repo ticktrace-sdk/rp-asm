@@ -10,24 +10,7 @@ plus the TX/RX DMA pacing extension exposed via the DMACR register.
 
 ## Block at a glance
 
-```
-   +-------------------------------------------------------------+
-   |  UART0 @ 0x40070000   +   UART1 @ 0x40078000                |
-   |                                                             |
-   |   +-----------------+   +-----------------+                 |
-   |   | 32-byte TX FIFO |   | 32-byte RX FIFO |                 |
-   |   +-----------------+   +-----------------+                 |
-   |          | TX shift reg          ^ RX shift reg             |
-   |          v                       |                          |
-   |   GP0 (TX)  GP4 (TX)        GP1 (RX)  GP5 (RX)              |
-   |          ----  +  ----      ----  +  ----                   |
-   |   GP2 (CTS) GP6 (CTS)       GP3 (RTS) GP7 (RTS)             |
-   |                                                             |
-   |   IRQ to NVIC: UART0_IRQ=33, UART1_IRQ=34                   |
-   |   DREQ codes : UART0_TX=28, UART0_RX=29,                    |
-   |                UART1_TX=30, UART1_RX=31                     |
-   +-------------------------------------------------------------+
-```
+![UART (PL011) block: 32-byte TX/RX FIFOs, TX/RX shift registers, TX/RX pin choices per instance (GP0/GP1 for UART0, GP4/GP5 for UART1), optional CTS/RTS hardware flow-control pins, and the NVIC + DREQ wiring](images/uart-block.svg)
 
 ## Register cookbook
 

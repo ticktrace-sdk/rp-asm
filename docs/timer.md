@@ -6,19 +6,7 @@ and the NVIC helpers in `src/nvic.S`.
 
 ## Block layout
 
-```
-+-------------+     1 MHz tick (set up by tick_init in M2)
-|   TICKS     +------+----------+
-+-------------+      |          |
-                     v          v
-                 +-------+   +-------+
-                 |TIMER0 |   |TIMER1 |     0x400b0000 / 0x400b8000
-                 |       |   |       |     64-bit us counter, 4 alarms each
-                 +---+---+   +---+---+
-                     |           |
-                     +---> NVIC IRQs 0..3 (TIMER0_IRQ_0..3)
-                                 +---> NVIC IRQs 4..7 (TIMER1_IRQ_0..3)
-```
+![TIMER block: TICKS distributes the 1 MHz tick to TIMER0 (0x400b0000) and TIMER1 (0x400b8000); each timer is a 64-bit microsecond counter with four alarms, wired to NVIC lines 0..3 and 4..7 respectively](images/timer-block.svg)
 
 ```
 SysTick (Cortex-M33 SCS)             0xE000E010..0xE000E01C

@@ -7,29 +7,7 @@ Datasheet reference: RP2350 datasheet rev 0.3 (Aug 2024) section 12.6.
 
 ## Block at a glance
 
-```
-   +---------------------------------------------------------------+
-   |  DMA controller @ 0x50000000                                  |
-   |                                                               |
-   |  +--- 16 channels --------+   +--- 4 IRQ aggregators ------+  |
-   |  | ch0  READ/WRITE/COUNT  |   | INTE0/INTF0/INTS0/INTR     |  |
-   |  | ch1  + 4 alias sets    |   | INTE1/INTF1/INTS1          |  |
-   |  | ...                    |   | INTE2/INTF2/INTS2          |  |
-   |  | ch15                   |   | INTE3/INTF3/INTS3          |  |
-   |  +------------------------+   +----------------------------+  |
-   |                                                               |
-   |  +--- 4 pacing TIMERs ---+    +--- 1 sniffer / CRC -------+   |
-   |  | TIMER0..3 = X/Y div   |    | SNIFF_CTRL / SNIFF_DATA   |   |
-   |  | -> TREQ 59..62        |    | CRC32 / CRC16 / SUM ...   |   |
-   |  +-----------------------+    +---------------------------+   |
-   +---------------------------------------------------------------+
-                              |
-                              v
-              +--------------------------------+
-              |  AHB-Lite bus master           |
-              |  (talks to SRAM, XIP, periph)  |
-              +--------------------------------+
-```
+![DMA controller: 16 channels, 4 IRQ aggregators, 4 pacing TIMERs, 1 sniffer/CRC unit, all behind one AHB-Lite master that talks to SRAM, XIP, and peripherals](images/dma-block.svg)
 
 ## Per-channel layout (size 0x40, channel n at +n*0x40)
 

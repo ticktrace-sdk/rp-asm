@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 520" font-family="ui-monospace, Menlo, Monaco, monospace" font-size="13">
+  <style>
+    text { fill: #1f2937; }
+    .title    { font-size: 16px; font-weight: bold; }
+    .small    { font-size: 11px; fill: #6b7280; }
+    .mono     { font-size: 11px; }
+    .label    { font-weight: bold; }
+    .container { fill: none; stroke: #2563eb; stroke-width: 1.5; stroke-dasharray: 4 3; }
+    .data     { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.5; }
+    .fifo     { fill: #bfdbfe; stroke: #2563eb; stroke-width: 1.5; }
+    .shift    { fill: #fef3c7; stroke: #b45309; stroke-width: 1.5; }
+    .pins     { fill: #dcfce7; stroke: #16a34a; stroke-width: 1.5; }
+    .reg      { fill: #f3f4f6; stroke: #374151; stroke-width: 1; }
+    .wire     { fill: none; stroke: #374151; stroke-width: 2; }
+    .wirelbl  { font-size: 11px; fill: #374151; }
+
+    @media (prefers-color-scheme: dark) {
+      text { fill: #e5e7eb; }
+      .small { fill: #9ca3af; }
+      .wirelbl { fill: #d1d5db; }
+      .wire { stroke: #d1d5db; }
+      .container { stroke: #93c5fd; }
+      .data { fill: #1e3a8a; stroke: #93c5fd; }
+      .fifo { fill: #1e40af; stroke: #93c5fd; }
+      .shift { fill: #78350f; stroke: #fbbf24; }
+      .pins { fill: #14532d; stroke: #86efac; }
+      .reg { fill: #1f2937; stroke: #9ca3af; }
+    }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M 0 0 L 9 4.5 L 0 9 Z" fill="#374151"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">RP2350 SPI block (PL022 PrimeCell)</text>
+  <text x="20" y="46" class="small">SPI0 at 0x40080000. SPI1 is identical, just +0x8000 away.</text>
+
+  <!-- Container -->
+  <rect class="container" x="40" y="70" width="740" height="330" rx="10"/>
+  <text x="60" y="92" class="label">SPI0 @ 0x40080000</text>
+
+  <!-- TX path: TX_DR -> TX FIFO -> TX shift -> MOSI -->
+  <g transform="translate(60,120)">
+    <rect class="data" x="0" y="0" width="90" height="50" rx="6"/>
+    <text x="45" y="22" text-anchor="middle" class="label">TX_DR</text>
+    <text x="45" y="38" text-anchor="middle" class="small">data port</text>
+  </g>
+  <line class="wire" x1="150" y1="145" x2="200" y2="145" marker-end="url(#arrowhead)"/>
+
+  <g transform="translate(200,120)">
+    <rect class="fifo" x="0" y="0" width="120" height="50" rx="6"/>
+    <text x="60" y="22" text-anchor="middle" class="label">TX FIFO</text>
+    <text x="60" y="38" text-anchor="middle" class="small">8 entries deep</text>
+  </g>
+  <line class="wire" x1="320" y1="145" x2="370" y2="145" marker-end="url(#arrowhead)"/>
+
+  <g transform="translate(370,120)">
+    <rect class="shift" x="0" y="0" width="140" height="50" rx="6"/>
+    <text x="70" y="22" text-anchor="middle" class="label">TX shift register</text>
+    <text x="70" y="38" text-anchor="middle" class="small">serialises to MOSI</text>
+  </g>
+  <line class="wire" x1="510" y1="145" x2="600" y2="145" marker-end="url(#arrowhead)"/>
+
+  <!-- Pin block (shared) -->
+  <g transform="translate(600,120)">
+    <rect class="pins" x="0" y="0" width="160" height="120" rx="6"/>
+    <text x="80" y="22" text-anchor="middle" class="label">MOSI / MISO</text>
+    <text x="80" y="40" text-anchor="middle" class="small">pin pair</text>
+    <text x="80" y="65" text-anchor="middle" class="small">master mode:</text>
+    <text x="80" y="80" text-anchor="middle" class="small">TX -> MOSI, MISO -> RX</text>
+    <text x="80" y="100" text-anchor="middle" class="small">slave mode:</text>
+    <text x="80" y="115" text-anchor="middle" class="small">TX -> MISO, MOSI -> RX</text>
+  </g>
+
+  <!-- RX path: pins -> RX shift -> RX FIFO -> RX_DR -->
+  <line class="wire" x1="600" y1="215" x2="510" y2="215" marker-end="url(#arrowhead)"/>
+
+  <g transform="translate(370,190)">
+    <rect class="shift" x="0" y="0" width="140" height="50" rx="6"/>
+    <text x="70" y="22" text-anchor="middle" class="label">RX shift register</text>
+    <text x="70" y="38" text-anchor="middle" class="small">deserialises from MISO</text>
+  </g>
+  <line class="wire" x1="370" y1="215" x2="320" y2="215" marker-end="url(#arrowhead)"/>
+
+  <g transform="translate(200,190)">
+    <rect class="fifo" x="0" y="0" width="120" height="50" rx="6"/>
+    <text x="60" y="22" text-anchor="middle" class="label">RX FIFO</text>
+    <text x="60" y="38" text-anchor="middle" class="small">8 entries deep</text>
+  </g>
+  <line class="wire" x1="200" y1="215" x2="150" y2="215" marker-end="url(#arrowhead)"/>
+
+  <g transform="translate(60,190)">
+    <rect class="data" x="0" y="0" width="90" height="50" rx="6"/>
+    <text x="45" y="22" text-anchor="middle" class="label">RX_DR</text>
+    <text x="45" y="38" text-anchor="middle" class="small">data port</text>
+  </g>
+
+  <!-- Control register bank -->
+  <text x="60" y="290" class="label">Control / status registers</text>
+  <g transform="translate(60,300)">
+    <!-- 7 registers in a row, each ~98 wide with 4px gap -->
+    <g>
+      <rect class="reg" x="0"   y="0" width="98" height="80" rx="4"/>
+      <text x="49" y="20" text-anchor="middle" class="label">CR0</text>
+      <text x="49" y="40" text-anchor="middle" class="small">DSS, FRF,</text>
+      <text x="49" y="55" text-anchor="middle" class="small">SPO, SPH,</text>
+      <text x="49" y="70" text-anchor="middle" class="small">SCR</text>
+    </g>
+    <g transform="translate(102,0)">
+      <rect class="reg" x="0" y="0" width="98" height="80" rx="4"/>
+      <text x="49" y="20" text-anchor="middle" class="label">CR1</text>
+      <text x="49" y="40" text-anchor="middle" class="small">LBM, SSE,</text>
+      <text x="49" y="55" text-anchor="middle" class="small">MS, SOD</text>
+    </g>
+    <g transform="translate(204,0)">
+      <rect class="reg" x="0" y="0" width="98" height="80" rx="4"/>
+      <text x="49" y="20" text-anchor="middle" class="label">SR</text>
+      <text x="49" y="40" text-anchor="middle" class="small">TFE, TNF,</text>
+      <text x="49" y="55" text-anchor="middle" class="small">RNE, RFF,</text>
+      <text x="49" y="70" text-anchor="middle" class="small">BSY</text>
+    </g>
+    <g transform="translate(306,0)">
+      <rect class="reg" x="0" y="0" width="98" height="80" rx="4"/>
+      <text x="49" y="20" text-anchor="middle" class="label">CPSR</text>
+      <text x="49" y="40" text-anchor="middle" class="small">even divs</text>
+      <text x="49" y="55" text-anchor="middle" class="small">2..254</text>
+    </g>
+    <g transform="translate(408,0)">
+      <rect class="reg" x="0" y="0" width="98" height="80" rx="4"/>
+      <text x="49" y="20" text-anchor="middle" class="label">IMSC</text>
+      <text x="49" y="40" text-anchor="middle" class="small">ROR, RT,</text>
+      <text x="49" y="55" text-anchor="middle" class="small">RX, TX</text>
+      <text x="49" y="70" text-anchor="middle" class="small">unmask</text>
+    </g>
+    <g transform="translate(510,0)">
+      <rect class="reg" x="0" y="0" width="98" height="80" rx="4"/>
+      <text x="49" y="20" text-anchor="middle" class="label">ICR</text>
+      <text x="49" y="40" text-anchor="middle" class="small">ROR, RT</text>
+      <text x="49" y="55" text-anchor="middle" class="small">clear (W1C)</text>
+    </g>
+    <g transform="translate(612,0)">
+      <rect class="reg" x="0" y="0" width="98" height="80" rx="4"/>
+      <text x="49" y="20" text-anchor="middle" class="label">DMACR</text>
+      <text x="49" y="40" text-anchor="middle" class="small">TXDMAE,</text>
+      <text x="49" y="55" text-anchor="middle" class="small">RXDMAE</text>
+    </g>
+  </g>
+
+  <!-- SPI1 footnote outside container -->
+  <text x="40" y="440" class="small">SPI1 @ 0x40088000 — identical layout, accessed at +0x8000 stride.</text>
+</svg>

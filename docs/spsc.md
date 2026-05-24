@@ -106,15 +106,3 @@ t_rx_consumer:
 Capacity is `size - 1` (one slot reserved to distinguish empty from
 full; the standard SPSC trick).
 
-## T1 tests
-
-`tests/unicorn/test_spsc.py` (8 cases):
-
-- Round-trip a single byte
-- Pop on empty returns -1
-- FIFO order over 5 pushes
-- 16th push (capacity 15) returns 0; head doesn't advance
-- Wraparound works (push 10, pop 8, push 8 more, pop all 10 in order)
-- Count matches actual size after mixed push/pop
-- `spsc_reset` zeroes head + tail
-- Wide `r1` (e.g. `0xDEADBE5A`) only stores the low byte

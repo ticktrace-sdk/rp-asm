@@ -7,25 +7,6 @@ paths: modules in the catalog point at `../src/foo.S`, linker scripts at
 `../link/*.ld`. Nothing about Studio adds source code Studio doesn't already
 consume; it is the build system from the user's perspective.
 
-```
-studio/
-├── catalog/                     TOML descriptors for targets + modules
-│   ├── targets/rp2350-arm.toml
-│   ├── system/*.toml
-│   └── peripherals/*.toml
-├── cmd/
-│   ├── rpasm/                   CLI binary
-│   └── rpasm-studio/            Gio GUI binary
-├── internal/
-│   ├── build/                   as → ld → objcopy → UF2 / firmware UF2
-│   ├── catalog/                 TOML loader
-│   ├── flash/                   orchestrator: rpasmboot, drive copy, bootinfo
-│   ├── project/                 .rpasm.toml loader + module resolver
-│   ├── rpasmboot/               PICOBOOT v2 wire protocol
-│   ├── uf2/                     UF2 reader
-│   └── usbx/                    OS USB transport (usbfs on Linux)
-└── testdata/*.rpasm.toml        sample project files
-```
 
 The CLI (`rpasm`) and GUI (`rpasm-studio`) share every internal package; the
 two binaries differ only in their main file and the GUI's view layer. A
@@ -109,7 +90,7 @@ Path conventions: `sources` use relative paths from the SDK root
 
 ## Build pipeline
 
-![Studio build pipeline](../book/figures/studio-build-pipeline.svg)
+![studio-build-pipeline.svg](images/studio-build-pipeline.svg)
 
 ### Slot-only mode
 

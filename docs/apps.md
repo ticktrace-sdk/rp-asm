@@ -402,20 +402,6 @@ Get an objdump and read your `_reset` path:
 arm-none-eabi-objdump -d build/myapp.elf | less
 ```
 
-### "I want a trace of what happened"
-
-The T1 Unicorn harness can run your firmware and print every MMIO
-write. Quick recipe: copy `tests/unicorn/test_v01_blinky.py`, point it
-at `build/myapp.elf`, and replace the assertion with
-`print(sim.writes)`. Run with `pytest -s`.
-
-### "I want to know how many cycles a function takes"
-
-Cycle-counting helpers via DWT are on the roadmap (M8). Until then,
-`arm-none-eabi-objdump -d` and count: Thumb-2 single-cycle for most
-ops, 2 cycles for loads, 1–3 for branches, 1 for `udiv` on M33.
-`docs/calling.md` has measured numbers for every public driver function.
-
 ## Where to go next
 
 - `docs/calling.md`: the AAPCS contract in full

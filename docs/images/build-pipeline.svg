@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 280" font-family="ui-monospace, Menlo, Monaco, monospace" font-size="12">
+  <style>
+    /* Light theme defaults: text falls back to near-black. */
+    text { fill: #1f2937; }
+
+.title { font-size: 16px; font-weight: bold; }
+    .note  { font-size: 11px; fill: #6b7280; }
+    .src   { fill: #dbeafe; stroke: #2563eb; }
+    .obj   { fill: #dcfce7; stroke: #16a34a; }
+    .elf   { fill: #fef3c7; stroke: #b45309; }
+    .uf2   { fill: #fed7aa; stroke: #ea580c; }
+    .step  { font-size: 11px; fill: #2563eb; }
+    .arrow { stroke: #374151; stroke-width: 1.5; fill: none; }
+    .label { font-weight: bold; }
+
+    @media (prefers-color-scheme: dark) {
+      text { fill: #e5e7eb; }
+      .note { fill: #9ca3af; }
+      .src { fill: #1e3a8a; }
+      .obj { fill: #14532d; }
+      .elf { fill: #78350f; }
+      .uf2 { fill: #7c2d12; }
+    }
+  </style>
+
+  <text x="20" y="28" class="title">ticktrace build pipeline</text>
+  <text x="20" y="48" class="note">No C compiler. Each step is a single tool from the binutils-arm-none-eabi package.</text>
+
+  <g transform="translate(20,80)">
+    <rect x="0" y="0" width="140" height="60" class="src" rx="6" />
+    <text x="70" y="26" text-anchor="middle" class="label">.S files</text>
+    <text x="70" y="46" text-anchor="middle" class="note">src/*.S, examples/*.S</text>
+
+    <rect x="190" y="0" width="140" height="60" class="obj" rx="6" />
+    <text x="260" y="26" text-anchor="middle" class="label">.o files</text>
+    <text x="260" y="46" text-anchor="middle" class="note">relocatable objects</text>
+
+    <rect x="380" y="0" width="140" height="60" class="elf" rx="6" />
+    <text x="450" y="26" text-anchor="middle" class="label">.elf</text>
+    <text x="450" y="46" text-anchor="middle" class="note">linked, relocated</text>
+
+    <rect x="570" y="0" width="170" height="60" class="uf2" rx="6" />
+    <text x="655" y="26" text-anchor="middle" class="label">.uf2</text>
+    <text x="655" y="46" text-anchor="middle" class="note">drag onto RPI-RP2 drive</text>
+  </g>
+
+  <!-- arrows + step labels -->
+  <g class="arrow">
+    <path d="M160,110 L188,110" />
+    <path d="M330,110 L378,110" />
+    <path d="M520,110 L568,110" />
+    <polygon points="188,110 180,106 180,114" fill="#374151" />
+    <polygon points="378,110 370,106 370,114" fill="#374151" />
+    <polygon points="568,110 560,106 560,114" fill="#374151" />
+  </g>
+
+  <text x="174" y="72" text-anchor="middle" class="step">as</text>
+  <text x="354" y="72" text-anchor="middle" class="step">ld + flash.ld</text>
+  <text x="544" y="72" text-anchor="middle" class="step">objcopy + rpasm uf2</text>
+
+  <!-- Annotation row -->
+  <g transform="translate(20,180)">
+    <text x="70"  y="0" text-anchor="middle" class="note">hand-written</text>
+    <text x="260" y="0" text-anchor="middle" class="note">Thumb-2 machine code</text>
+    <text x="450" y="0" text-anchor="middle" class="note">symbols resolved</text>
+    <text x="655" y="0" text-anchor="middle" class="note">bootrom-compatible</text>
+
+    <text x="70"  y="18" text-anchor="middle" class="note">assembly</text>
+    <text x="260" y="18" text-anchor="middle" class="note">+ symbol tables</text>
+    <text x="450" y="18" text-anchor="middle" class="note">addresses fixed</text>
+    <text x="655" y="18" text-anchor="middle" class="note">drag-and-drop format</text>
+  </g>
+
+  <text x="20" y="248" class="note">Makefile target `make` builds everything; `make build/blinky_flash.uf2` builds one image.</text>
+</svg>
