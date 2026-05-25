@@ -9,11 +9,13 @@ Pure-assembly firmware SDK for the Raspberry Pi RP2350 (Cortex-M33).
 - **Verified on silicon.** 283 Unicorn-emulator tests + QEMU ISA tests + Renode platform tests, plus hardware bring-up on a Pico 2.
 - **Dual-licensed.** [AGPL-3.0-or-later](LICENSE) for open-source, personal, educational, and evaluation use. A [commercial license](COMMERCIAL-LICENSE.md) is available from Amken LLC for proprietary firmware that can't comply with the AGPL. Contact [licensing@ticktrace.io](mailto:licensing@ticktrace.io).
 
-Build a UF2 with one line on Mac, Windows, or Linux:
+Build a UF2 with one line on Mac, Windows, or Linux — no clone, no toolchain:
 
 ```sh
 docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:slim
 ```
+
+UF2s land in `./build/`. Drag `build/blinky.uf2` onto the BOOTSEL drive to flash.
 
 For a GUI, download [ticktrace Studio](https://github.com/ticktrace-sdk/ticktrace-studio/releases). It bundles the toolchain and flashes the Pico for you in one click.
 
@@ -88,13 +90,24 @@ main:
 
 ## Quickstart
 
-### With Docker (Mac, Windows, Linux: no install)
+### With Docker (Mac, Windows, Linux: no install, no clone)
+
+The image ships with the SDK source baked in. Run it from any empty directory — the container seeds the source on first run and builds `blinky.uf2` + every example into `./build/` on the host.
 
 ```sh
+# bash / zsh / WSL
 docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:slim
 ```
 
-That builds `blinky.uf2` and every example into `./build/`. Same command, same result on every platform. No toolchain to install.
+```powershell
+# PowerShell (Windows)
+docker run --rm -v ${PWD}:/workspace ghcr.io/ticktrace-sdk/sdk:slim
+```
+
+```bat
+:: CMD (Windows)
+docker run --rm -v "%cd%":/workspace ghcr.io/ticktrace-sdk/sdk:slim
+```
 
 To run the test suite (T1 Unicorn + T2 QEMU + Go tool tests):
 
@@ -102,7 +115,7 @@ To run the test suite (T1 Unicorn + T2 QEMU + Go tool tests):
 docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:full make test
 ```
 
-Linux users whose UID isn't 1000 should add `--user $(id -u):$(id -g)` so build artefacts aren't root-owned.
+If you'd rather work from a `git clone`, mount the cloned directory the same way — the mount wins over the baked source. Linux users whose UID isn't 1000 should add `--user $(id -u):$(id -g)` so build artefacts aren't root-owned.
 
 ### Native (Linux)
 

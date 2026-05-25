@@ -5,7 +5,8 @@
 # ticktrace SDK container image. Two stages:
 #
 #   slim  - just enough to build firmware ( binutils-arm-none-eabi, make,
-#           python3 for tools/uf2.py ). ~250 MB.
+#           python3 for tools/uf2.py ) + the SDK source baked at /sdk.
+#           ~250 MB.
 #   full  - slim + Unicorn + QEMU + Go + pytest, enough to run the full
 #           T1+T2+test-tools tiers. ~800 MB.
 #
@@ -18,8 +19,10 @@
 # Multi-arch build (used by CI):
 #   docker buildx build --platform linux/amd64,linux/arm64 --target slim ...
 #
-# Run examples:
-#   docker run --rm -v "$PWD":/workspace ticktrace/sdk:slim
+# Run examples (no clone required - the entrypoint seeds /workspace from
+# the baked /sdk on first run if /workspace is empty):
+#   docker run --rm ticktrace/sdk:slim                                # builds inside container
+#   docker run --rm -v "$PWD":/workspace ticktrace/sdk:slim           # UF2s land on host in ./build/
 #   docker run --rm -v "$PWD":/workspace ticktrace/sdk:slim make examples
 #
 # If your host UID != 1000 (e.g. Linux native users), pass --user so build
@@ -59,12 +62,19 @@ RUN useradd --uid 1000 --create-home --shell /bin/bash ticktrace \
  && mkdir -p /workspace \
  && chown -R ticktrace:ticktrace /workspace
 
+# Bake the SDK source at /sdk so the image runs standalone (no clone, no
+# volume mount required). The entrypoint copies /sdk into /workspace the
+# first time /workspace is empty; if the user mounts a clone of the SDK at
+# /workspace, that wins and the baked copy is ignored.
+COPY --chown=ticktrace:ticktrace . /sdk
+RUN chmod 0755 /sdk/docker/entrypoint.sh
+
 USER ticktrace
 WORKDIR /workspace
 
-# Sensible default: 'docker run image' = 'make'. Override with any command:
-#   docker run image make examples
-#   docker run image bash
+# Default: seed /workspace if needed, then run `make`. Override with any
+# command: 'docker run image make examples', 'docker run image bash', etc.
+ENTRYPOINT ["/sdk/docker/entrypoint.sh"]
 CMD ["make"]
 
 
