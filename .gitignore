@@ -1,3 +1,12 @@
 
 # Make build output.
 build/
+
+# IDE.
+.idea/
+.vscode/
+
+# Rust bridge / app build output (cargo). target/ is always regenerable;
+# Cargo.lock for these demo crates is left untracked too.
+**/target/
+**/Cargo.lock

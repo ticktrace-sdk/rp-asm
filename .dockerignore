@@ -18,6 +18,9 @@ __pycache__/
 **/.cache/
 tools/build/
 
+# Rust bridge / app build output - large and regenerable; never bake into /sdk.
+**/target/
+
 # Editor / IDE / OS junk.
 .idea/
 .vscode/
