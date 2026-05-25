@@ -9,7 +9,7 @@ Pure-assembly firmware SDK for the Raspberry Pi RP2350 (Cortex-M33).
 - **Verified on silicon.** 283 Unicorn-emulator tests + QEMU ISA tests + Renode platform tests, plus hardware bring-up on a Pico 2.
 - **Dual-licensed.** [AGPL-3.0-or-later](LICENSE) for open-source, personal, educational, and evaluation use. A [commercial license](COMMERCIAL-LICENSE.md) is available from Amken LLC for proprietary firmware that can't comply with the AGPL. Contact [licensing@ticktrace.io](mailto:licensing@ticktrace.io).
 
-Build a UF2 with one line on Mac, Windows, or Linux — no clone, no toolchain:
+Build a UF2 with one line on Mac, Windows, or Linux  no clone, no toolchain:
 
 ```sh
 docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:slim
@@ -92,7 +92,7 @@ main:
 
 ### With Docker (Mac, Windows, Linux: no install, no clone)
 
-The image ships with the SDK source baked in. Run it from any empty directory — the container seeds the source on first run and builds `blinky.uf2` + every example into `./build/` on the host.
+The image ships with the SDK source baked in. Run it from any empty directory. The container seeds the source on first run and builds `blinky.uf2` + every example into `./build/` on the host.
 
 ```sh
 # bash / zsh / WSL
@@ -108,14 +108,6 @@ docker run --rm -v ${PWD}:/workspace ghcr.io/ticktrace-sdk/sdk:slim
 :: CMD (Windows)
 docker run --rm -v "%cd%":/workspace ghcr.io/ticktrace-sdk/sdk:slim
 ```
-
-To run the test suite (T1 Unicorn + T2 QEMU + Go tool tests):
-
-```sh
-docker run --rm -v "$PWD":/workspace ghcr.io/ticktrace-sdk/sdk:full make test
-```
-
-If you'd rather work from a `git clone`, mount the cloned directory the same way — the mount wins over the baked source. Linux users whose UID isn't 1000 should add `--user $(id -u):$(id -g)` so build artefacts aren't root-owned.
 
 ### Native (Linux)
 
@@ -150,7 +142,7 @@ make build/blinky_flash.uf2          # build a specific flash image
 make build/<example>_flash.uf2       # any example
 ```
 
-After flashing, open a serial terminal at **115200 8N1** on UART0 TX (GP0, pin 1).
+The examples folder has a variety of examples that pipe the debug serial through USB and are named _usb. Use those if you do not have a UART adapter.
 
 ## Repository layout
 
